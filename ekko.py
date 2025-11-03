@@ -40,7 +40,7 @@ class Config:
                 with open('CON', 'r') as con:
                     print(prompt, end='', flush=True)
                     return con.readline().strip()
-        except:
+        except (IOError, OSError, FileNotFoundError):
             # Fall back to regular input if TTY is not available
             return input(prompt).strip()
 
@@ -140,9 +140,9 @@ class Config:
         return {
             "provider": "ollama",  # "anthropic" or "ollama"
             "anthropic_api_key": os.environ.get("ANTHROPIC_API_KEY", ""),
-            "anthropic_model": "claude-sonnet-4-20250514",
+            "anthropic_model": "claude-sonnet-4-5-20250929",
             "ollama_url": "http://localhost:11434",
-            "ollama_model": "llama3.2",
+            "ollama_model": "qwen3-coder",
             "system_prompt": "You are a shell expert. Output ONLY the command to solve the problem. No explanation, no markdown, no backticks - just the raw shell command."
         }
     
