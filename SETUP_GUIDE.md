@@ -6,19 +6,19 @@ This guide is for maintainers setting up the ekko repository for initial publica
 
 ### 1. Update Placeholder URLs
 
-Before publishing, replace `YOUR_GITHUB_USERNAME` with your actual GitHub username in these files:
+Before publishing, replace `kdmarble` with your actual GitHub username in these files:
 
 ```bash
 # Find all instances
-grep -r "YOUR_GITHUB_USERNAME" .
+grep -r "kdmarble" .
 
 # Replace all at once (Linux)
 find . -type f \( -name "*.sh" -o -name "*.ps1" -o -name "*.md" \) \
-  -exec sed -i 's/YOUR_GITHUB_USERNAME/your-actual-username/g' {} +
+  -exec sed -i 's/kdmarble/your-actual-username/g' {} +
 
 # Replace all at once (macOS)
 find . -type f \( -name "*.sh" -o -name "*.ps1" -o -name "*.md" \) \
-  -exec sed -i '' 's/YOUR_GITHUB_USERNAME/your-actual-username/g' {} +
+  -exec sed -i '' 's/kdmarble/your-actual-username/g' {} +
 ```
 
 **Files to update:**

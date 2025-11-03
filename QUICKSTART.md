@@ -6,7 +6,7 @@ Get running in under 2 minutes.
 
 ```bash
 # Install
-curl -fsSL https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/ekko/main/install-ekko.sh | bash
+curl -fsSL https://raw.githubusercontent.com/kdmarble/ekko/main/install-ekko.sh | bash
 
 # Reload shell
 source ~/.zshrc  # or ~/.bashrc
@@ -19,7 +19,7 @@ ekko find all files over 500MB
 
 ```powershell
 # Download and run installer
-irm https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/ekko/main/install-ekko.ps1 | iex
+irm https://raw.githubusercontent.com/kdmarble/ekko/main/install-ekko.ps1 | iex
 
 # Reload PowerShell
 $env:Path = [System.Environment]::GetEnvironmentVariable('Path','User')

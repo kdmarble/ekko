@@ -53,6 +53,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Links
 
-- [Repository](https://github.com/YOUR_GITHUB_USERNAME/ekko)
-- [Issues](https://github.com/YOUR_GITHUB_USERNAME/ekko/issues)
-- [Discussions](https://github.com/YOUR_GITHUB_USERNAME/ekko/discussions)
+- [Repository](https://github.com/kdmarble/ekko)
+- [Issues](https://github.com/kdmarble/ekko/issues)
+- [Discussions](https://github.com/kdmarble/ekko/discussions)

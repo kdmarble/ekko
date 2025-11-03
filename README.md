@@ -26,14 +26,14 @@ find ~/Downloads -type f -size +500M
 ### Linux / macOS / WSL
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/ekko/main/install-ekko.sh | bash
+curl -fsSL https://raw.githubusercontent.com/kdmarble/ekko/main/install-ekko.sh | bash
 ```
 
 Or manually:
 
 ```bash
 # Download
-curl -fsSL https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/ekko/main/ekko.py -o ~/.local/bin/ekko
+curl -fsSL https://raw.githubusercontent.com/kdmarble/ekko/main/ekko.py -o ~/.local/bin/ekko
 chmod +x ~/.local/bin/ekko
 
 # Install dependencies
@@ -47,7 +47,7 @@ ekko --setup
 
 ```powershell
 # Download install script
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/ekko/main/install-ekko.ps1" -OutFile "install-ekko.ps1"
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/kdmarble/ekko/main/install-ekko.ps1" -OutFile "install-ekko.ps1"
 
 # Run installer
 powershell -ExecutionPolicy Bypass -File install-ekko.ps1
@@ -238,6 +238,6 @@ The name **ekko** is a play on the shell `echo` command - it echoes back what yo
 **Get started in 60 seconds:**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/ekko/main/install-ekko.sh | bash
+curl -fsSL https://raw.githubusercontent.com/kdmarble/ekko/main/install-ekko.sh | bash
 ekko find all files over 500MB
 ```
