@@ -13,6 +13,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bash/Zsh completion scripts
 - Configuration profiles for different use cases
 
+## [1.1.0] - 2025-11-02
+
+### Added
+- **Provider switching system**: Easy switching between AI providers without re-running setup
+  - `ekko --config` - Show current configuration with masked API keys
+  - `ekko --switch <provider>` - Switch to a different AI provider (ollama, anthropic)
+  - `ekko --model <name>` - Change model for the currently active provider
+  - `ekko --use <provider>:<model>` - Combo command to switch both provider and model at once
+- **Settings persistence**: All provider configurations persist when switching
+  - Ollama settings remain saved when using Anthropic
+  - Anthropic settings remain saved when using Ollama
+  - No need to reconfigure each time you switch
+- **Enhanced help**: Updated `--help` output with provider management examples
+
+### Changed
+- Configuration structure already supports multiple providers simultaneously
+- Setup wizard only modifies the active provider's settings, preserving others
+- Help text now includes "Provider Management" section with examples
+
+### Tests
+- Added `test_provider_switching.py` with 10 comprehensive tests
+- Added `test_upgrade_compatibility.py` with 5 upgrade tests
+- All 24 tests passing (7 setup + 2 installation + 10 switching + 5 upgrade)
+- Test coverage for: switching providers, changing models, settings persistence, error handling, upgrade compatibility
+
+### Upgrade from v1.0.1
+- **No migration required** - v1.1.0 is fully backward compatible with v1.0.1 configs
+- Existing configs work seamlessly without any changes
+- New switching commands work immediately with old configs
+- Both provider settings are preserved during upgrade
+- Simply update ekko and start using the new features!
+
+### Benefits
+- **Scalable design**: Easy to add new providers (OpenAI, Gemini, etc.) in the future
+- **Better UX**: No need to run `ekko --setup` just to switch providers
+- **Transparent**: `--config` command shows what's configured and what's active
+- **Fast**: One-command switching between your favorite setups
+
 ## [1.0.1] - 2025-11-02
 
 ### Fixed
@@ -73,6 +111,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History
 
+- **1.1.0** - Provider switching system and enhanced configuration management
 - **1.0.1** - Bug fixes for installation and configuration validation
 - **1.0.0** - Initial public release
 

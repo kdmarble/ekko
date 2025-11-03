@@ -208,6 +208,102 @@ class Config:
         print(f"\n✓ Configuration saved to {self.config_file}")
         print("\nTo use: ekko find all files over 500MB")
 
+    def switch_provider(self, provider_name: str):
+        """Switch to a different provider"""
+        # Normalize provider name
+        provider_name = provider_name.lower()
+
+        # Validate provider name
+        valid_providers = ["ollama", "anthropic"]
+        if provider_name not in valid_providers:
+            print(f"⚠ Invalid provider: '{provider_name}'")
+            print(f"   Valid providers: {', '.join(valid_providers)}")
+            sys.exit(1)
+
+        # Check if provider is configured
+        if provider_name == "anthropic":
+            api_key = self.config.get("anthropic_api_key", "")
+            if not api_key or not self._validate_api_key(api_key):
+                print(f"⚠ Anthropic not configured.")
+                print(f"   Run: ekko --setup")
+                sys.exit(1)
+        elif provider_name == "ollama":
+            url = self.config.get("ollama_url", "")
+            if not url or not self._validate_url(url):
+                print(f"⚠ Ollama not configured.")
+                print(f"   Run: ekko --setup")
+                sys.exit(1)
+
+        # Switch provider
+        self.config["provider"] = provider_name
+        self.save_config()
+
+        # Show confirmation
+        model = self.config.get(f"{provider_name}_model", "")
+        print(f"✓ Switched to {provider_name} ({model})")
+
+    def switch_model(self, model_name: str):
+        """Switch model for the current provider"""
+        # Validate model name
+        if not self._validate_model_name(model_name):
+            print(f"⚠ Invalid model name: '{model_name}'")
+            sys.exit(1)
+
+        # Get current provider
+        provider = self.config.get("provider", "ollama")
+
+        # Update the appropriate model field
+        model_key = f"{provider}_model"
+        self.config[model_key] = model_name
+        self.save_config()
+
+        print(f"✓ Changed {provider} model to {model_name}")
+
+    def show_config(self):
+        """Display current configuration with masked sensitive data"""
+        provider = self.config.get("provider", "ollama")
+
+        print(f"\n🔧 ekko configuration\n")
+        print(f"Config file: {self.config_file}\n")
+
+        # Show active provider
+        if provider == "anthropic":
+            model = self.config.get("anthropic_model", "")
+            print(f"✓ Active: anthropic ({model})")
+        else:
+            model = self.config.get("ollama_model", "")
+            url = self.config.get("ollama_url", "")
+            print(f"✓ Active: ollama ({model})")
+            print(f"  URL: {url}")
+
+        print()
+
+        # Show other configured providers
+        if provider == "anthropic":
+            # Show Ollama if configured
+            ollama_url = self.config.get("ollama_url", "")
+            ollama_model = self.config.get("ollama_model", "")
+            if ollama_url and self._validate_url(ollama_url):
+                print(f"○ Available: ollama ({ollama_model})")
+                print(f"  URL: {ollama_url}")
+            else:
+                print(f"○ Not configured: ollama")
+                print(f"  Run: ekko --setup")
+        else:
+            # Show Anthropic if configured
+            api_key = self.config.get("anthropic_api_key", "")
+            anthropic_model = self.config.get("anthropic_model", "")
+            if api_key and self._validate_api_key(api_key):
+                # Mask API key - show only last 4 characters
+                masked_key = "sk-ant-..." + api_key[-4:] if len(api_key) > 4 else "***"
+                print(f"○ Available: anthropic ({anthropic_model})")
+                print(f"  API Key: {masked_key}")
+            else:
+                print(f"○ Not configured: anthropic")
+                print(f"  Run: ekko --setup")
+
+        print()
+
 
 class LLMProvider:
     """Base class for LLM providers"""
@@ -373,19 +469,59 @@ class CommandGenerator:
 def main():
     """Main entry point"""
     config = Config()
-    
+
     # Handle special commands
     if len(sys.argv) > 1:
-        if sys.argv[1] in ['--setup', 'setup', 'config']:
+        if sys.argv[1] in ['--setup', 'setup']:
             config.setup_wizard()
             return
-        
+
+        if sys.argv[1] in ['--config', 'config']:
+            config.show_config()
+            return
+
+        if sys.argv[1] in ['--switch']:
+            if len(sys.argv) < 3:
+                print("Usage: ekko --switch <provider>")
+                print("Providers: ollama, anthropic")
+                sys.exit(1)
+            config.switch_provider(sys.argv[2])
+            return
+
+        if sys.argv[1] in ['--model']:
+            if len(sys.argv) < 3:
+                print("Usage: ekko --model <model_name>")
+                sys.exit(1)
+            config.switch_model(sys.argv[2])
+            return
+
+        if sys.argv[1] in ['--use']:
+            if len(sys.argv) < 3:
+                print("Usage: ekko --use <provider>:<model>")
+                print("Example: ekko --use anthropic:claude-sonnet-4-5-20250929")
+                print("Example: ekko --use ollama:llama3")
+                sys.exit(1)
+
+            use_arg = sys.argv[2]
+            if ':' in use_arg:
+                provider, model = use_arg.split(':', 1)
+                config.switch_provider(provider)
+                config.switch_model(model)
+            else:
+                # Just switch provider, keep current model
+                config.switch_provider(use_arg)
+            return
+
         if sys.argv[1] in ['--help', '-h', 'help']:
             print("""ekko - AI-powered command line assistant
 
 Usage:
   ekko <prompt>           Generate and run command
   ekko --setup            Run configuration wizard
+  ekko --config           Show current configuration
+  ekko --switch <provider>   Switch AI provider
+  ekko --model <name>     Change model for current provider
+  ekko --use <provider>:<model>  Switch provider and model
   ekko --help             Show this help
 
 Examples:
@@ -393,11 +529,18 @@ Examples:
   ekko compress this folder to tar.gz
   ekko show disk usage sorted by size
 
+Provider Management:
+  ekko --config                          # Show what's configured
+  ekko --switch ollama                   # Switch to Ollama
+  ekko --switch anthropic                # Switch to Anthropic
+  ekko --model llama3                    # Change model
+  ekko --use ollama:qwen3-coder          # Switch both at once
+
 Configuration: ~/.config/ekko/config.json""")
             return
-        
+
         if sys.argv[1] in ['--version', '-v']:
-            print("ekko v1.0.1")
+            print("ekko v1.1.0")
             return
     
     # Check if configured
