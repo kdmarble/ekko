@@ -540,7 +540,7 @@ Configuration: ~/.config/ekko/config.json""")
             return
 
         if sys.argv[1] in ['--version', '-v']:
-            print("ekko v1.1.0")
+            print("ekko v1.1.1")
             return
     
     # Check if configured

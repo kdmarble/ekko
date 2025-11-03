@@ -64,11 +64,18 @@ if ($currentPath -notlike "*$installDir*") {
 
 Write-Host "✓ Shell integration complete" -ForegroundColor Green
 
-# Run setup wizard
-# Note: PowerShell handles piped scripts differently than bash, so stdin should be available
-# However, the Python code has been updated to explicitly read from console/TTY for safety
-Write-Host "`n🔧 Running configuration wizard...`n" -ForegroundColor Cyan
-& "$installDir\ekko.bat" --setup
+# Run setup wizard only if config doesn't exist
+$configFile = "$env:APPDATA\ekko\config.json"
+if (Test-Path $configFile) {
+    Write-Host "`n✓ Existing configuration preserved" -ForegroundColor Green
+    Write-Host "ℹ  Config file: $configFile" -ForegroundColor Cyan
+    Write-Host "ℹ  To reconfigure, run: ekko --setup" -ForegroundColor Cyan
+} else {
+    # Note: PowerShell handles piped scripts differently than bash, so stdin should be available
+    # However, the Python code has been updated to explicitly read from console/TTY for safety
+    Write-Host "`n🔧 Running configuration wizard...`n" -ForegroundColor Cyan
+    & "$installDir\ekko.bat" --setup
+}
 
 # Final instructions
 Write-Host "`n✅ Installation complete!`n" -ForegroundColor Green

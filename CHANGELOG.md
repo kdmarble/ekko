@@ -13,6 +13,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bash/Zsh completion scripts
 - Configuration profiles for different use cases
 
+## [1.1.1] - 2025-11-03
+
+### Fixed
+- **Critical installer bug**: Installers now preserve existing configuration files
+  - Previously, re-running the installer would overwrite existing configs
+  - Both `install-ekko.sh` and `install-ekko.ps1` now check for existing `config.json`
+  - If config exists, installation skips setup wizard and preserves all settings
+  - New installs still run the setup wizard as expected
+  - Prevents accidental loss of API keys, custom models, and other settings
+
+### Changed
+- Installers now display helpful message when config is preserved
+- Users informed they can run `ekko --setup` manually to reconfigure if needed
+
 ## [1.1.0] - 2025-11-02
 
 ### Added
@@ -111,6 +125,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History
 
+- **1.1.1** - Hotfix for installer config preservation
 - **1.1.0** - Provider switching system and enhanced configuration management
 - **1.0.1** - Bug fixes for installation and configuration validation
 - **1.0.0** - Initial public release

@@ -103,9 +103,16 @@ fi
 
 echo -e "${GREEN}✓${NC} Shell integration complete"
 
-# Run setup wizard
-echo -e "\n${BLUE}🔧 Running configuration wizard...${NC}\n"
-"$INSTALL_DIR/ekko" --setup < /dev/tty
+# Run setup wizard only if config doesn't exist
+CONFIG_FILE="$CONFIG_DIR/config.json"
+if [ -f "$CONFIG_FILE" ]; then
+    echo -e "\n${GREEN}✓${NC} Existing configuration preserved"
+    echo -e "${BLUE}ℹ${NC}  Config file: $CONFIG_FILE"
+    echo -e "${BLUE}ℹ${NC}  To reconfigure, run: ${BLUE}ekko --setup${NC}"
+else
+    echo -e "\n${BLUE}🔧 Running configuration wizard...${NC}\n"
+    "$INSTALL_DIR/ekko" --setup < /dev/tty
+fi
 
 # Final instructions
 echo -e "\n${GREEN}✅ Installation complete!${NC}\n"
