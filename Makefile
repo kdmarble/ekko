@@ -1,9 +1,9 @@
 .PHONY: help install test demo clean format lint
 
 help:
-	@echo "aicmd - Development Commands"
+	@echo "ekko - Development Commands"
 	@echo ""
-	@echo "make install    - Install aicmd locally"
+	@echo "make install    - Install ekko locally"
 	@echo "make demo       - Run demo without installing"
 	@echo "make test       - Run tests"
 	@echo "make format     - Format code with black"
@@ -12,8 +12,8 @@ help:
 	@echo ""
 
 install:
-	@echo "Installing aicmd..."
-	bash install.sh
+	@echo "Installing ekko..."
+	bash install-ekko.sh
 
 demo:
 	@echo "Running demo..."
@@ -21,17 +21,17 @@ demo:
 
 test:
 	@echo "Running tests..."
-	python3 aicmd.py --help
-	python3 aicmd.py --version
+	python3 ekko.py --help
+	python3 ekko.py --version
 	@echo "✓ Basic tests passed"
 
 format:
 	@which black > /dev/null || (echo "Install black: pip install black" && exit 1)
-	black aicmd.py
+	black ekko.py
 
 lint:
 	@which flake8 > /dev/null || (echo "Install flake8: pip install flake8" && exit 1)
-	flake8 aicmd.py --max-line-length=100 --ignore=E501,W503
+	flake8 ekko.py --max-line-length=100 --ignore=E501,W503
 
 clean:
 	rm -rf __pycache__

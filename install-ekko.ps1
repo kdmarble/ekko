@@ -37,7 +37,7 @@ if (Test-Path "ekko.py") {
     Copy-Item "ekko.py" "$installDir\ekko.py"
 } else {
     Write-Host "ℹ Downloading ekko..." -ForegroundColor Blue
-    $url = "https://raw.githubusercontent.com/yourusername/ekko/main/ekko.py"
+    $url = "https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/ekko/main/ekko.py"
     Invoke-WebRequest -Uri $url -OutFile "$installDir\ekko.py"
 }
 
