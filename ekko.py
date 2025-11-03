@@ -20,18 +20,120 @@ except ImportError:
 
 class Config:
     """Configuration management"""
-    
+
     def __init__(self):
         self.config_dir = Path.home() / ".config" / "ekko"
         self.config_file = self.config_dir / "config.json"
         self.config = self.load_config()
+
+    def _get_input(self, prompt: str) -> str:
+        """Get input from TTY/console instead of stdin to handle piped installation scripts"""
+        try:
+            # Try to open TTY directly (Unix/Linux/macOS/WSL)
+            if sys.platform != 'win32':
+                with open('/dev/tty', 'r') as tty:
+                    # Print to stdout so user sees the prompt
+                    print(prompt, end='', flush=True)
+                    return tty.readline().strip()
+            else:
+                # On Windows, try to open CON
+                with open('CON', 'r') as con:
+                    print(prompt, end='', flush=True)
+                    return con.readline().strip()
+        except:
+            # Fall back to regular input if TTY is not available
+            return input(prompt).strip()
+
+    def _validate_url(self, url: str) -> bool:
+        """Validate URL format"""
+        if not url:
+            return False
+        # Check if it starts with http:// or https://
+        if not url.startswith(('http://', 'https://')):
+            return False
+        # Basic validation that it has a domain/host
+        # Remove protocol and check if there's something after it
+        without_protocol = url.split('://', 1)[1] if '://' in url else ''
+        return bool(without_protocol and len(without_protocol) > 0)
+
+    def _validate_model_name(self, model: str) -> bool:
+        """Validate model name is reasonable"""
+        if not model:
+            return False
+        # Check for suspicious content (like bash commands or comments)
+        suspicious_patterns = ['#', '$', '&&', '||', ';', '\n', 'echo', 'rm ', 'curl']
+        return not any(pattern in model for pattern in suspicious_patterns)
+
+    def _validate_api_key(self, api_key: str) -> bool:
+        """Validate API key format"""
+        if not api_key:
+            return False
+        # Anthropic API keys typically start with 'sk-ant-'
+        # Check for reasonable length and no suspicious content
+        suspicious_patterns = ['#', '\n', 'echo', '$', '&&']
+        return len(api_key) > 10 and not any(pattern in api_key for pattern in suspicious_patterns)
     
     def load_config(self) -> Dict[str, Any]:
         """Load configuration from file"""
         if self.config_file.exists():
-            with open(self.config_file, 'r') as f:
-                return json.load(f)
+            try:
+                with open(self.config_file, 'r') as f:
+                    config = json.load(f)
+
+                # Validate the loaded config
+                if not self._validate_config(config):
+                    print(f"⚠ Warning: Configuration file appears to be corrupted or invalid.")
+                    print(f"   Config file: {self.config_file}")
+                    print(f"   Please run 'ekko --setup' to reconfigure.\n")
+                    sys.exit(1)
+
+                return config
+            except json.JSONDecodeError:
+                print(f"⚠ Error: Configuration file is not valid JSON.")
+                print(f"   Config file: {self.config_file}")
+                print(f"   Please run 'ekko --setup' to reconfigure.\n")
+                sys.exit(1)
         return self.default_config()
+
+    def _validate_config(self, config: Dict[str, Any]) -> bool:
+        """Validate configuration structure and content"""
+        # Check for required keys
+        required_keys = ["provider", "ollama_url", "ollama_model", "anthropic_model", "system_prompt"]
+        if not all(key in config for key in required_keys):
+            return False
+
+        # Validate provider-specific settings
+        provider = config.get("provider", "")
+        if provider == "ollama":
+            # Validate Ollama URL
+            ollama_url = config.get("ollama_url", "")
+            if not self._validate_url(ollama_url):
+                print(f"⚠ Invalid Ollama URL in config: '{ollama_url}'")
+                return False
+
+            # Validate model name
+            model = config.get("ollama_model", "")
+            if not self._validate_model_name(model):
+                print(f"⚠ Invalid Ollama model name in config: '{model}'")
+                return False
+
+        elif provider == "anthropic":
+            # Validate API key
+            api_key = config.get("anthropic_api_key", "")
+            if not self._validate_api_key(api_key):
+                print(f"⚠ Invalid Anthropic API key in config")
+                return False
+
+            # Validate model name
+            model = config.get("anthropic_model", "")
+            if not self._validate_model_name(model):
+                print(f"⚠ Invalid Anthropic model name in config: '{model}'")
+                return False
+        else:
+            print(f"⚠ Invalid provider in config: '{provider}'")
+            return False
+
+        return True
     
     def default_config(self) -> Dict[str, Any]:
         """Return default configuration"""
@@ -53,32 +155,55 @@ class Config:
     def setup_wizard(self):
         """Interactive setup wizard"""
         print("🔧 ekko setup wizard\n")
-        
+
         # Provider selection
         print("Choose your AI provider:")
         print("1. Ollama (local, free)")
         print("2. Anthropic API (requires API key)")
-        choice = input("Enter choice [1]: ").strip() or "1"
-        
+        choice = self._get_input("Enter choice [1]: ") or "1"
+
         if choice == "2":
             self.config["provider"] = "anthropic"
-            api_key = input("Enter Anthropic API key: ").strip()
-            self.config["anthropic_api_key"] = api_key
-            
-            model = input(f"Model [{self.config['anthropic_model']}]: ").strip()
+
+            # Get and validate API key
+            while True:
+                api_key = self._get_input("Enter Anthropic API key: ")
+                if self._validate_api_key(api_key):
+                    self.config["anthropic_api_key"] = api_key
+                    break
+                else:
+                    print("⚠ Invalid API key format. Please enter a valid Anthropic API key.")
+
+            # Get model name (with validation)
+            model = self._get_input(f"Model [{self.config['anthropic_model']}]: ")
             if model:
-                self.config["anthropic_model"] = model
+                if self._validate_model_name(model):
+                    self.config["anthropic_model"] = model
+                else:
+                    print(f"⚠ Invalid model name, using default: {self.config['anthropic_model']}")
         else:
             self.config["provider"] = "ollama"
-            
-            url = input(f"Ollama URL [{self.config['ollama_url']}]: ").strip()
-            if url:
-                self.config["ollama_url"] = url
-            
-            model = input(f"Model [{self.config['ollama_model']}]: ").strip()
+
+            # Get and validate Ollama URL
+            while True:
+                url = self._get_input(f"Ollama URL [{self.config['ollama_url']}]: ")
+                if not url:
+                    # User pressed enter, use default
+                    break
+                if self._validate_url(url):
+                    self.config["ollama_url"] = url
+                    break
+                else:
+                    print("⚠ Invalid URL format. Please enter a valid URL (e.g., http://localhost:11434)")
+
+            # Get and validate model name
+            model = self._get_input(f"Model [{self.config['ollama_model']}]: ")
             if model:
-                self.config["ollama_model"] = model
-        
+                if self._validate_model_name(model):
+                    self.config["ollama_model"] = model
+                else:
+                    print(f"⚠ Invalid model name, using default: {self.config['ollama_model']}")
+
         self.save_config()
         print(f"\n✓ Configuration saved to {self.config_file}")
         print("\nTo use: ekko find all files over 500MB")
@@ -121,7 +246,13 @@ class AnthropicProvider(LLMProvider):
             result = response.json()
             return result["content"][0]["text"]
         except requests.exceptions.RequestException as e:
-            return f"Error: {str(e)}"
+            error_msg = f"Error connecting to Anthropic API: {str(e)}\n"
+            error_msg += "Possible fixes:\n"
+            error_msg += "  - Check your API key is valid\n"
+            error_msg += "  - Verify your internet connection\n"
+            error_msg += "  - Run 'ekko --setup' to reconfigure\n"
+            print(error_msg)
+            sys.exit(1)
 
 
 class OllamaProvider(LLMProvider):
@@ -147,7 +278,14 @@ class OllamaProvider(LLMProvider):
             result = response.json()
             return result["response"]
         except requests.exceptions.RequestException as e:
-            return f"Error: {str(e)}"
+            error_msg = f"Error connecting to Ollama: {str(e)}\n"
+            error_msg += "Possible fixes:\n"
+            error_msg += f"  - Check Ollama is running at {self.url}\n"
+            error_msg += f"  - Verify the model '{self.model}' is installed: ollama list\n"
+            error_msg += f"  - Check the Ollama URL is correct\n"
+            error_msg += "  - Run 'ekko --setup' to reconfigure\n"
+            print(error_msg)
+            sys.exit(1)
 
 
 class CommandGenerator:
@@ -259,7 +397,7 @@ Configuration: ~/.config/ekko/config.json""")
             return
         
         if sys.argv[1] in ['--version', '-v']:
-            print("ekko v1.0.0")
+            print("ekko v1.0.1")
             return
     
     # Check if configured

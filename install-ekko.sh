@@ -105,7 +105,7 @@ echo -e "${GREEN}✓${NC} Shell integration complete"
 
 # Run setup wizard
 echo -e "\n${BLUE}🔧 Running configuration wizard...${NC}\n"
-"$INSTALL_DIR/ekko" --setup
+"$INSTALL_DIR/ekko" --setup < /dev/tty
 
 # Final instructions
 echo -e "\n${GREEN}✅ Installation complete!${NC}\n"
