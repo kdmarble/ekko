@@ -65,6 +65,8 @@ if ($currentPath -notlike "*$installDir*") {
 Write-Host "✓ Shell integration complete" -ForegroundColor Green
 
 # Run setup wizard
+# Note: PowerShell handles piped scripts differently than bash, so stdin should be available
+# However, the Python code has been updated to explicitly read from console/TTY for safety
 Write-Host "`n🔧 Running configuration wizard...`n" -ForegroundColor Cyan
 & "$installDir\ekko.bat" --setup
 

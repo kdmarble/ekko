@@ -137,3 +137,4 @@ test_output/
 
 # User configuration (don't commit test configs)
 config.json
+.venv/

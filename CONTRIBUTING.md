@@ -176,6 +176,79 @@ except requests.exceptions.RequestException as e:
 
 ## Testing
 
+ekko has a comprehensive automated test suite using `pexpect` for interactive testing. We encourage adding tests for all new features and bug fixes.
+
+### Running the Test Suite
+
+```bash
+# Setup test environment (one time)
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install pexpect requests
+
+# Run all tests
+python3 tests/test_setup_wizard.py      # 7 interactive setup tests
+python3 tests/test_piped_installation.py # 2 installation tests
+
+# Expected output: 9/9 tests passing (100%)
+```
+
+### Test Structure
+
+**`tests/test_setup_wizard.py`** - Interactive setup wizard tests:
+- Valid configurations (Ollama and Anthropic)
+- Input validation (URLs, models, API keys)
+- Corrupted config detection
+- Error handling and user feedback
+
+**`tests/test_piped_installation.py`** - Installation scenario tests:
+- Piped installation (`curl ... | bash`)
+- TTY input redirection
+- End-to-end installation workflow
+
+### Writing New Tests
+
+When adding new features, include tests that:
+
+1. **Test the happy path** - Verify normal operation
+2. **Test edge cases** - Invalid inputs, missing data, etc.
+3. **Test error handling** - Ensure helpful error messages
+4. **Test user interactions** - Use `pexpect` for interactive workflows
+
+Example test structure:
+
+```python
+def test_your_feature(self):
+    """Test description"""
+    config_dir = self.setup_test_env()
+
+    env = os.environ.copy()
+    env['HOME'] = self.test_dir
+
+    # Spawn interactive process
+    child = pexpect.spawn(
+        'python3', ['ekko.py', '--your-flag'],
+        env=env,
+        timeout=10
+    )
+
+    try:
+        # Test interactions
+        child.expect('Expected prompt:')
+        child.sendline('user input')
+
+        # Verify behavior
+        child.expect('Expected output')
+        child.expect(pexpect.EOF, timeout=2)
+
+        # Assert results
+        assert config_file.exists(), "Config should exist"
+
+    finally:
+        child.close()
+        self.cleanup_test_env()
+```
+
 ### Manual Testing
 
 Test your changes across different scenarios:
@@ -200,11 +273,29 @@ Test your changes across different scenarios:
 
 Before submitting a PR, verify:
 
+- [ ] All automated tests pass (`tests/test_*.py`)
 - [ ] `make test` passes
 - [ ] `make lint` passes
+- [ ] Added tests for new features or bug fixes
 - [ ] Manual testing in local environment
 - [ ] Documentation updated if needed
 - [ ] No breaking changes (or clearly documented)
+
+### Why We Use `pexpect`
+
+We use `pexpect` for testing because:
+- **Interactive testing**: Tests real user interactions with the CLI
+- **TTY simulation**: Validates input/output behavior in terminal environments
+- **Bug prevention**: Caught the critical piped installation bug
+- **Real-world scenarios**: Tests actual installation and setup workflows
+
+### Test Coverage Goals
+
+We aim to maintain:
+- ✅ **100% of critical paths** tested (setup, config, installation)
+- ✅ **All validation functions** tested with valid and invalid inputs
+- ✅ **Error handling** tested with helpful error messages
+- ✅ **Installation scenarios** tested (piped, interactive, etc.)
 
 ## Adding New AI Providers
 

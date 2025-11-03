@@ -225,6 +225,42 @@ rm -rf "$APPDATA/ekko"  # Windows
 - **Storage**: ~10KB for the tool
 - **For Ollama**: 2-40GB depending on model
 
+## Testing
+
+ekko includes a comprehensive test suite to ensure reliability and prevent regressions.
+
+### Running Tests
+
+```bash
+# Setup test environment
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install pexpect requests
+
+# Run all tests
+python3 tests/test_setup_wizard.py      # Interactive setup tests (7 tests)
+python3 tests/test_piped_installation.py # Installation tests (2 tests)
+```
+
+### Test Coverage
+
+**Setup Wizard Tests** (9 total):
+- ✅ Valid Ollama and Anthropic configurations
+- ✅ URL validation (rejects invalid formats)
+- ✅ Model name validation (detects injection attempts)
+- ✅ API key validation
+- ✅ Corrupted config detection
+- ✅ Piped installation scenario testing
+
+**What's Tested**:
+- Interactive setup wizard with various inputs
+- Configuration file validation
+- Installation script behavior in piped environments (`curl ... | bash`)
+- Error handling and user guidance
+- TTY input redirection for piped installations
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for details on adding new tests.
+
 ## License
 
 MIT License - See LICENSE file for details
