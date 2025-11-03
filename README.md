@@ -238,26 +238,49 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install pexpect requests
 
 # Run all tests
-python3 tests/test_setup_wizard.py      # Interactive setup tests (7 tests)
-python3 tests/test_piped_installation.py # Installation tests (2 tests)
+python3 tests/test_setup_wizard.py         # Interactive setup tests (7 tests)
+python3 tests/test_piped_installation.py   # Installation tests (2 tests)
+python3 tests/test_provider_switching.py   # Provider switching tests (10 tests)
+python3 tests/test_upgrade_compatibility.py # Upgrade compatibility tests (5 tests)
 ```
 
 ### Test Coverage
 
-**Setup Wizard Tests** (9 total):
+**Setup Wizard Tests** (7 tests):
 - ✅ Valid Ollama and Anthropic configurations
 - ✅ URL validation (rejects invalid formats)
 - ✅ Model name validation (detects injection attempts)
 - ✅ API key validation
 - ✅ Corrupted config detection
-- ✅ Piped installation scenario testing
+
+**Installation Tests** (2 tests):
+- ✅ Piped installation scenario testing (`curl ... | bash`)
+- ✅ TTY input redirection for piped installations
+
+**Provider Switching Tests** (10 tests):
+- ✅ Display configuration with `--config`
+- ✅ Switch between providers with `--switch`
+- ✅ Change models with `--model`
+- ✅ Combo switching with `--use`
+- ✅ Settings persistence across provider changes
+- ✅ Validation of invalid providers and models
+- ✅ Error handling for unconfigured providers
+
+**Upgrade Compatibility Tests** (5 tests):
+- ✅ v1.0.1 configs work seamlessly with v1.1.0
+- ✅ Config structure unchanged (no migration needed)
+- ✅ Both provider settings preserved during upgrade
+- ✅ New switching commands work with old configs
+- ✅ Backward compatibility verified
 
 **What's Tested**:
 - Interactive setup wizard with various inputs
 - Configuration file validation
-- Installation script behavior in piped environments (`curl ... | bash`)
+- Installation script behavior in piped environments
+- Provider and model switching functionality
+- Settings persistence and configuration management
+- Version upgrade compatibility (v1.0.1 → v1.1.0)
 - Error handling and user guidance
-- TTY input redirection for piped installations
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for details on adding new tests.
 
