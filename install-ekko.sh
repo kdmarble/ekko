@@ -16,7 +16,7 @@ NC='\033[0m' # No Color
 # Configuration
 INSTALL_DIR="$HOME/.local/bin"
 CONFIG_DIR="$HOME/.config/ekko"
-REPO_URL="https://raw.githubusercontent.com/yourusername/ekko/main/ekko.py"
+REPO_URL="https://raw.githubusercontent.com/kdmarble/ekko/main/ekko.py"
 
 echo -e "${BLUE}🚀 ekko installer${NC}\n"
 
