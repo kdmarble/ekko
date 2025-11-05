@@ -23,7 +23,6 @@ except ImportError:
 # Base Provider Interface
 # ============================================================================
 
-
 class LLMProvider(ABC):
     """
     Abstract base class for LLM providers.
@@ -73,11 +72,9 @@ class LLMProvider(ABC):
         """
         return True, None
 
-
 # ============================================================================
 # Anthropic Provider
 # ============================================================================
-
 
 class AnthropicProvider(LLMProvider):
     """
@@ -158,11 +155,9 @@ class AnthropicProvider(LLMProvider):
 
         return True, None
 
-
 # ============================================================================
 # Ollama Provider
 # ============================================================================
-
 
 class OllamaProvider(LLMProvider):
     """
@@ -244,7 +239,6 @@ class OllamaProvider(LLMProvider):
 
         return True, None
 
-
 # ============================================================================
 # Provider Registry
 # ============================================================================
@@ -254,20 +248,19 @@ PROVIDERS = {
     "ollama": OllamaProvider,
 }
 
-
 def get_provider(provider_name: str, **kwargs):
     """Get a provider instance by name."""
     provider_class = PROVIDERS.get(provider_name.lower())
     if not provider_class:
         available = ", ".join(PROVIDERS.keys())
-        raise ValueError(f"Unknown provider '{provider_name}'. Available: {available}")
+        raise ValueError(
+            f"Unknown provider '{provider_name}'. Available: {available}"
+        )
     return provider_class(**kwargs)
-
 
 # ============================================================================
 # Configuration Management
 # ============================================================================
-
 
 class Config:
     """Manage ekko configuration file and settings."""
@@ -602,11 +595,9 @@ class Config:
 
         print()
 
-
 # ============================================================================
 # Command Generator
 # ============================================================================
-
 
 class CommandGenerator:
     """Generate and execute shell commands from natural language."""
@@ -725,11 +716,9 @@ class CommandGenerator:
                 prompt = f"Original: '{original_prompt}'. Previous: '{cmd}'. Issue: {user_input}. Generate corrected command."
                 print("\033[90m↻ revising...\033[0m")
 
-
 # ============================================================================
 # Command Line Interface
 # ============================================================================
-
 
 def main():
     """Main entry point for ekko CLI."""
@@ -807,7 +796,7 @@ Configuration: ~/.config/ekko/config.json"""
             return
 
         if sys.argv[1] in ["--version", "-v"]:
-            print("ekko v1.2.0-dev")
+            print("ekko v1.2.0")
             return
 
     # Check if configured
@@ -829,7 +818,6 @@ Configuration: ~/.config/ekko/config.json"""
     # Generate and run
     generator = CommandGenerator(config.config)
     generator.run(prompt)
-
 
 if __name__ == "__main__":
     main()
