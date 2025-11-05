@@ -102,10 +102,10 @@ class TestUpgradeCompatibility:
         self.setup_test_env(v101_config)
 
         try:
-            # Test that v1.2.0-dev can load v1.0.1 config
+            # Test that v1.2.0 can load v1.0.1 config
             result = self.run_ekko(['--version'])
             assert result.returncode == 0, "Should load v1.0.1 config successfully"
-            assert "v1.2.0-dev" in result.stdout, "Should report v1.2.0-dev"
+            assert "v1.2.0" in result.stdout, "Should report v1.2.0"
 
             # Test new --config command works
             result = self.run_ekko(['--config'])
@@ -267,7 +267,7 @@ def main():
     """Run all tests"""
     print("="*60)
     print("EKKO UPGRADE COMPATIBILITY TEST SUITE")
-    print("Testing v1.0.1 → v1.1.0 upgrade")
+    print("Testing v1.0.1 → v1.2.0 upgrade")
     print("="*60)
 
     tester = TestUpgradeCompatibility()
