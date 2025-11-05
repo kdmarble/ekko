@@ -69,6 +69,9 @@ class TestUpgradeCompatibility:
         if env is None:
             env = os.environ.copy()
             env['HOME'] = self.test_dir
+            # Preserve Python path so subprocess can find installed modules
+            if 'PYTHONPATH' not in env:
+                env['PYTHONPATH'] = ':'.join(sys.path)
 
         result = subprocess.run(
             ['python3', str(self.ekko_script)] + args,
@@ -99,10 +102,10 @@ class TestUpgradeCompatibility:
         self.setup_test_env(v101_config)
 
         try:
-            # Test that v1.1.0 can load v1.0.1 config
+            # Test that v1.2.0-dev can load v1.0.1 config
             result = self.run_ekko(['--version'])
             assert result.returncode == 0, "Should load v1.0.1 config successfully"
-            assert "v1.1.0" in result.stdout, "Should report v1.1.0"
+            assert "v1.2.0-dev" in result.stdout, "Should report v1.2.0-dev"
 
             # Test new --config command works
             result = self.run_ekko(['--config'])

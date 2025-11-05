@@ -78,6 +78,9 @@ class TestProviderSwitching:
         if env is None:
             env = os.environ.copy()
             env['HOME'] = self.test_dir
+            # Preserve Python path so subprocess can find installed modules
+            if 'PYTHONPATH' not in env:
+                env['PYTHONPATH'] = ':'.join(sys.path)
 
         result = subprocess.run(
             ['python3', str(self.ekko_script)] + args,
