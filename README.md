@@ -142,14 +142,27 @@ ollama pull qwen3-coder                # Install model
 
 ## Contributing
 
-We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for:
-- Adding new AI providers
-- Bug fixes and features
-- Running tests
-- Development setup
+We welcome contributions! ekko uses a **modular development structure** but distributes as a single file for easy installation.
 
-Current priorities:
-- Expanded provider support (OpenAI, Google Gemini, etc.)
+**Development docs**: [DEVELOPMENT.md](DEVELOPMENT.md)
+
+**Quick start for contributors**:
+```bash
+git clone https://github.com/kdmarble/ekko.git
+cd ekko
+# Edit files in ekko_package/ekko/
+python3 build.py  # Build single-file distribution
+python3 tests/test_*.py  # Run tests
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for:
+- Adding new AI providers
+- Code style guidelines
+- Testing requirements
+- Pull request process
+
+**Current priorities**:
+- Expanded provider support (OpenAI, Google Gemini, Cohere)
 - Enhanced command parsing
 - Bash/Zsh completions
 

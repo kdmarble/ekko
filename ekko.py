@@ -3,6 +3,7 @@
 ekko - AI-powered command line assistant
 Supports Anthropic API and Ollama
 """
+
 import sys
 import os
 import json
@@ -10,6 +11,7 @@ import subprocess
 import re
 from pathlib import Path
 from typing import Dict, Any
+from abc import ABC, abstractmethod
 
 try:
     import requests
@@ -17,17 +19,282 @@ except ImportError:
     print("Error: requests module not found. Install with: pip install requests")
     sys.exit(1)
 
+# ============================================================================
+# Base Provider Interface
+# ============================================================================
+
+from abc import ABC, abstractmethod
+
+class LLMProvider(ABC):
+    """
+    Abstract base class for LLM providers.
+
+    All provider implementations must inherit from this class and implement
+    the generate() method.
+    """
+
+    @abstractmethod
+    def generate(self, prompt: str, system_prompt: str) -> str:
+        """
+        Generate a command from a natural language prompt.
+
+        Args:
+            prompt: The user's natural language request
+            system_prompt: System instructions for the model
+
+        Returns:
+            Generated shell command as a string
+
+        Raises:
+            Exception: Provider-specific errors should be caught and
+                      converted to user-friendly messages with sys.exit(1)
+        """
+        raise NotImplementedError
+
+    @classmethod
+    def get_config_keys(cls) -> list:
+        """
+        Return list of configuration keys needed for this provider.
+
+        Returns:
+            List of configuration key names
+        """
+        return []
+
+    @classmethod
+    def validate_config(cls, config: dict) -> tuple:
+        """
+        Validate provider-specific configuration.
+
+        Args:
+            config: Configuration dictionary
+
+        Returns:
+            Tuple of (is_valid: bool, error_message: str or None)
+        """
+        return True, None
+
+# ============================================================================
+# Anthropic Provider
+# ============================================================================
+
+import sys
+import requests
+
+class AnthropicProvider(LLMProvider):
+    """
+    Provider for Anthropic's Claude models via their API.
+
+    Supports all Claude models through the Anthropic API.
+    """
+
+    def __init__(self, api_key: str, model: str):
+        """
+        Initialize Anthropic provider.
+
+        Args:
+            api_key: Anthropic API key (starts with 'sk-ant-')
+            model: Model identifier (e.g., 'claude-sonnet-4-5-20250929')
+        """
+        self.api_key = api_key
+        self.model = model
+        self.api_url = "https://api.anthropic.com/v1/messages"
+
+    def generate(self, prompt: str, system_prompt: str) -> str:
+        """Generate command using Anthropic API."""
+        headers = {
+            "x-api-key": self.api_key,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+        }
+
+        data = {
+            "model": self.model,
+            "max_tokens": 1024,
+            "system": system_prompt,
+            "messages": [{"role": "user", "content": prompt}],
+        }
+
+        try:
+            response = requests.post(
+                self.api_url, headers=headers, json=data, timeout=30
+            )
+            response.raise_for_status()
+            result = response.json()
+            return result["content"][0]["text"]
+        except requests.exceptions.RequestException as e:
+            error_msg = f"Error connecting to Anthropic API: {str(e)}\n"
+            error_msg += "Possible fixes:\n"
+            error_msg += "  - Check your API key is valid\n"
+            error_msg += "  - Verify your internet connection\n"
+            error_msg += "  - Run 'ekko --setup' to reconfigure\n"
+            print(error_msg)
+            sys.exit(1)
+
+    @classmethod
+    def get_config_keys(cls) -> list:
+        """Return configuration keys needed for Anthropic."""
+        return ["anthropic_api_key", "anthropic_model"]
+
+    @classmethod
+    def validate_config(cls, config: dict) -> tuple:
+        """Validate Anthropic configuration."""
+        api_key = config.get("anthropic_api_key", "")
+        model = config.get("anthropic_model", "")
+
+        # Validate API key
+        if not api_key or len(api_key) < 10:
+            return False, "Invalid or missing Anthropic API key"
+
+        # Check for suspicious patterns
+        suspicious = ["#", "\n", "echo", "$", "&&"]
+        if any(pattern in api_key for pattern in suspicious):
+            return False, "Invalid Anthropic API key format"
+
+        # Validate model name
+        if not model:
+            return False, "Missing Anthropic model name"
+
+        if any(pattern in model for pattern in suspicious):
+            return False, f"Invalid Anthropic model name: '{model}'"
+
+        return True, None
+
+# ============================================================================
+# Ollama Provider
+# ============================================================================
+
+import sys
+import requests
+
+class OllamaProvider(LLMProvider):
+    """
+    Provider for local Ollama models.
+
+    Ollama allows running open-source LLMs locally for complete privacy.
+    """
+
+    def __init__(self, url: str, model: str):
+        """
+        Initialize Ollama provider.
+
+        Args:
+            url: Ollama API URL (e.g., 'http://localhost:11434')
+            model: Model name (e.g., 'qwen3-coder', 'llama3.2')
+        """
+        self.url = url.rstrip("/")
+        self.model = model
+
+    def generate(self, prompt: str, system_prompt: str) -> str:
+        """Generate command using Ollama."""
+        api_url = f"{self.url}/api/generate"
+
+        data = {
+            "model": self.model,
+            "prompt": prompt,
+            "system": system_prompt,
+            "stream": False,
+        }
+
+        try:
+            response = requests.post(api_url, json=data, timeout=60)
+            response.raise_for_status()
+            result = response.json()
+            return result["response"]
+        except requests.exceptions.RequestException as e:
+            error_msg = f"Error connecting to Ollama: {str(e)}\n"
+            error_msg += "Possible fixes:\n"
+            error_msg += f"  - Check Ollama is running at {self.url}\n"
+            error_msg += (
+                f"  - Verify the model '{self.model}' is installed: ollama list\n"
+            )
+            error_msg += "  - Check the Ollama URL is correct\n"
+            error_msg += "  - Run 'ekko --setup' to reconfigure\n"
+            print(error_msg)
+            sys.exit(1)
+
+    @classmethod
+    def get_config_keys(cls) -> list:
+        """Return configuration keys needed for Ollama."""
+        return ["ollama_url", "ollama_model"]
+
+    @classmethod
+    def validate_config(cls, config: dict) -> tuple:
+        """Validate Ollama configuration."""
+        url = config.get("ollama_url", "")
+        model = config.get("ollama_model", "")
+
+        # Validate URL
+        if not url:
+            return False, "Missing Ollama URL"
+
+        if not url.startswith(("http://", "https://")):
+            return False, f"Invalid Ollama URL format: '{url}'"
+
+        # Basic validation for domain/host
+        without_protocol = url.split("://", 1)[1] if "://" in url else ""
+        if not without_protocol:
+            return False, f"Invalid Ollama URL: '{url}'"
+
+        # Validate model name
+        if not model:
+            return False, "Missing Ollama model name"
+
+        # Check for suspicious patterns
+        suspicious = ["#", "$", "&&", "||", ";", "\n", "echo", "rm ", "curl"]
+        if any(pattern in model for pattern in suspicious):
+            return False, f"Invalid Ollama model name: '{model}'"
+
+        return True, None
+
+# ============================================================================
+# Provider Registry
+# ============================================================================
+
+PROVIDERS = {
+    "anthropic": AnthropicProvider,
+    "ollama": OllamaProvider,
+}
+
+def get_provider(provider_name: str, **kwargs):
+    """Get a provider instance by name."""
+    provider_class = PROVIDERS.get(provider_name.lower())
+    if not provider_class:
+        available = ", ".join(PROVIDERS.keys())
+        raise ValueError(
+            f"Unknown provider '{provider_name}'. Available: {available}"
+        )
+    return provider_class(**kwargs)
+
+# ============================================================================
+# Configuration Management
+# ============================================================================
+
+import os
+import sys
+import json
+from pathlib import Path
+from typing import Dict, Any
 
 class Config:
-    """Configuration management"""
+    """Manage ekko configuration file and settings."""
 
     def __init__(self):
+        """Initialize configuration manager."""
         self.config_dir = Path.home() / ".config" / "ekko"
         self.config_file = self.config_dir / "config.json"
         self.config = self.load_config()
 
     def _get_input(self, prompt: str) -> str:
-        """Get input from TTY instead of stdin to handle piped installation scripts"""
+        """
+        Get input from TTY instead of stdin to handle piped installation scripts.
+
+        Args:
+            prompt: Prompt to display to user
+
+        Returns:
+            User input as string
+        """
         try:
             # Open TTY directly to avoid reading from piped stdin
             with open("/dev/tty", "r") as tty:
@@ -39,19 +306,34 @@ class Config:
             return input(prompt).strip()
 
     def _validate_url(self, url: str) -> bool:
-        """Validate URL format"""
+        """
+        Validate URL format.
+
+        Args:
+            url: URL to validate
+
+        Returns:
+            True if valid, False otherwise
+        """
         if not url:
             return False
         # Check if it starts with http:// or https://
         if not url.startswith(("http://", "https://")):
             return False
         # Basic validation that it has a domain/host
-        # Remove protocol and check if there's something after it
         without_protocol = url.split("://", 1)[1] if "://" in url else ""
         return bool(without_protocol and len(without_protocol) > 0)
 
     def _validate_model_name(self, model: str) -> bool:
-        """Validate model name is reasonable"""
+        """
+        Validate model name is reasonable.
+
+        Args:
+            model: Model name to validate
+
+        Returns:
+            True if valid, False otherwise
+        """
         if not model:
             return False
         # Check for suspicious content (like bash commands or comments)
@@ -59,10 +341,17 @@ class Config:
         return not any(pattern in model for pattern in suspicious_patterns)
 
     def _validate_api_key(self, api_key: str) -> bool:
-        """Validate API key format"""
+        """
+        Validate API key format.
+
+        Args:
+            api_key: API key to validate
+
+        Returns:
+            True if valid, False otherwise
+        """
         if not api_key:
             return False
-        # Anthropic API keys typically start with 'sk-ant-'
         # Check for reasonable length and no suspicious content
         suspicious_patterns = ["#", "\n", "echo", "$", "&&"]
         return len(api_key) > 10 and not any(
@@ -70,7 +359,12 @@ class Config:
         )
 
     def load_config(self) -> Dict[str, Any]:
-        """Load configuration from file"""
+        """
+        Load configuration from file.
+
+        Returns:
+            Configuration dictionary
+        """
         if self.config_file.exists():
             try:
                 with open(self.config_file, "r") as f:
@@ -94,7 +388,15 @@ class Config:
         return self.default_config()
 
     def _validate_config(self, config: Dict[str, Any]) -> bool:
-        """Validate configuration structure and content"""
+        """
+        Validate configuration structure and content.
+
+        Args:
+            config: Configuration dictionary
+
+        Returns:
+            True if valid, False otherwise
+        """
         # Check for required keys
         required_keys = [
             "provider",
@@ -108,39 +410,26 @@ class Config:
 
         # Validate provider-specific settings
         provider = config.get("provider", "")
-        if provider == "ollama":
-            # Validate Ollama URL
-            ollama_url = config.get("ollama_url", "")
-            if not self._validate_url(ollama_url):
-                print(f"⚠ Invalid Ollama URL in config: '{ollama_url}'")
-                return False
-
-            # Validate model name
-            model = config.get("ollama_model", "")
-            if not self._validate_model_name(model):
-                print(f"⚠ Invalid Ollama model name in config: '{model}'")
-                return False
-
-        elif provider == "anthropic":
-            # Validate API key
-            api_key = config.get("anthropic_api_key", "")
-            if not self._validate_api_key(api_key):
-                print("⚠ Invalid Anthropic API key in config")
-                return False
-
-            # Validate model name
-            model = config.get("anthropic_model", "")
-            if not self._validate_model_name(model):
-                print(f"⚠ Invalid Anthropic model name in config: '{model}'")
-                return False
-        else:
+        if provider not in PROVIDERS:
             print(f"⚠ Invalid provider in config: '{provider}'")
+            return False
+
+        # Get provider class and validate
+        provider_class = PROVIDERS[provider]
+        is_valid, error_msg = provider_class.validate_config(config)
+        if not is_valid:
+            print(f"⚠ {error_msg}")
             return False
 
         return True
 
     def default_config(self) -> Dict[str, Any]:
-        """Return default configuration"""
+        """
+        Return default configuration.
+
+        Returns:
+            Default configuration dictionary
+        """
         return {
             "provider": "ollama",  # "anthropic" or "ollama"
             "anthropic_api_key": os.environ.get("ANTHROPIC_API_KEY", ""),
@@ -151,16 +440,16 @@ class Config:
         }
 
     def save_config(self):
-        """Save configuration to file"""
+        """Save configuration to file."""
         self.config_dir.mkdir(parents=True, exist_ok=True)
         with open(self.config_file, "w") as f:
             json.dump(self.config, f, indent=2)
 
     def setup_wizard(self):
-        """Interactive setup wizard"""
+        """Run interactive setup wizard."""
         print("🔧 ekko setup wizard\n")
 
-        # Provider selection
+        # Provider selection - use explicit ordering
         print("Choose your AI provider:")
         print("1. Ollama (local, free)")
         print("2. Anthropic API (requires API key)")
@@ -176,9 +465,7 @@ class Config:
                     self.config["anthropic_api_key"] = api_key
                     break
                 else:
-                    print(
-                        "⚠ Invalid API key format. Please enter a valid Anthropic API key."
-                    )
+                    print("⚠ Invalid API key format. Please enter a valid Anthropic API key.")
 
             # Get model name (with validation)
             model = self._get_input(f"Model [{self.config['anthropic_model']}]: ")
@@ -221,30 +508,29 @@ class Config:
         print("\nTo use: ekko find all files over 500MB")
 
     def switch_provider(self, provider_name: str):
-        """Switch to a different provider"""
+        """
+        Switch to a different provider.
+
+        Args:
+            provider_name: Name of provider to switch to
+        """
         # Normalize provider name
         provider_name = provider_name.lower()
 
         # Validate provider name
-        valid_providers = ["ollama", "anthropic"]
-        if provider_name not in valid_providers:
+        if provider_name not in PROVIDERS:
+            available = ", ".join(PROVIDERS.keys())
             print(f"⚠ Invalid provider: '{provider_name}'")
-            print(f"   Valid providers: {', '.join(valid_providers)}")
+            print(f"   Valid providers: {available}")
             sys.exit(1)
 
         # Check if provider is configured
-        if provider_name == "anthropic":
-            api_key = self.config.get("anthropic_api_key", "")
-            if not api_key or not self._validate_api_key(api_key):
-                print("⚠ Anthropic not configured.")
-                print("   Run: ekko --setup")
-                sys.exit(1)
-        elif provider_name == "ollama":
-            url = self.config.get("ollama_url", "")
-            if not url or not self._validate_url(url):
-                print("⚠ Ollama not configured.")
-                print("   Run: ekko --setup")
-                sys.exit(1)
+        provider_class = PROVIDERS[provider_name]
+        is_valid, error_msg = provider_class.validate_config(self.config)
+        if not is_valid:
+            print(f"⚠ {provider_name.capitalize()} not configured.")
+            print("   Run: ekko --setup")
+            sys.exit(1)
 
         # Switch provider
         self.config["provider"] = provider_name
@@ -255,7 +541,12 @@ class Config:
         print(f"✓ Switched to {provider_name} ({model})")
 
     def switch_model(self, model_name: str):
-        """Switch model for the current provider"""
+        """
+        Switch model for the current provider.
+
+        Args:
+            model_name: Name of model to switch to
+        """
         # Validate model name
         if not self._validate_model_name(model_name):
             print(f"⚠ Invalid model name: '{model_name}'")
@@ -272,7 +563,7 @@ class Config:
         print(f"✓ Changed {provider} model to {model_name}")
 
     def show_config(self):
-        """Display current configuration with masked sensitive data"""
+        """Display current configuration with masked sensitive data."""
         provider = self.config.get("provider", "ollama")
 
         print("\n🔧 ekko configuration\n")
@@ -316,117 +607,72 @@ class Config:
 
         print()
 
+# ============================================================================
+# Command Generator
+# ============================================================================
 
-class LLMProvider:
-    """Base class for LLM providers"""
-
-    def generate(self, prompt: str, system_prompt: str) -> str:
-        raise NotImplementedError
-
-
-class AnthropicProvider(LLMProvider):
-    """Anthropic API provider"""
-
-    def __init__(self, api_key: str, model: str):
-        self.api_key = api_key
-        self.model = model
-        self.api_url = "https://api.anthropic.com/v1/messages"
-
-    def generate(self, prompt: str, system_prompt: str) -> str:
-        headers = {
-            "x-api-key": self.api_key,
-            "anthropic-version": "2023-06-01",
-            "content-type": "application/json",
-        }
-
-        data = {
-            "model": self.model,
-            "max_tokens": 1024,
-            "system": system_prompt,
-            "messages": [{"role": "user", "content": prompt}],
-        }
-
-        try:
-            response = requests.post(
-                self.api_url, headers=headers, json=data, timeout=30
-            )
-            response.raise_for_status()
-            result = response.json()
-            return result["content"][0]["text"]
-        except requests.exceptions.RequestException as e:
-            error_msg = f"Error connecting to Anthropic API: {str(e)}\n"
-            error_msg += "Possible fixes:\n"
-            error_msg += "  - Check your API key is valid\n"
-            error_msg += "  - Verify your internet connection\n"
-            error_msg += "  - Run 'ekko --setup' to reconfigure\n"
-            print(error_msg)
-            sys.exit(1)
-
-
-class OllamaProvider(LLMProvider):
-    """Ollama local provider"""
-
-    def __init__(self, url: str, model: str):
-        self.url = url.rstrip("/")
-        self.model = model
-
-    def generate(self, prompt: str, system_prompt: str) -> str:
-        api_url = f"{self.url}/api/generate"
-
-        data = {
-            "model": self.model,
-            "prompt": prompt,
-            "system": system_prompt,
-            "stream": False,
-        }
-
-        try:
-            response = requests.post(api_url, json=data, timeout=60)
-            response.raise_for_status()
-            result = response.json()
-            return result["response"]
-        except requests.exceptions.RequestException as e:
-            error_msg = f"Error connecting to Ollama: {str(e)}\n"
-            error_msg += "Possible fixes:\n"
-            error_msg += f"  - Check Ollama is running at {self.url}\n"
-            error_msg += (
-                f"  - Verify the model '{self.model}' is installed: ollama list\n"
-            )
-            error_msg += "  - Check the Ollama URL is correct\n"
-            error_msg += "  - Run 'ekko --setup' to reconfigure\n"
-            print(error_msg)
-            sys.exit(1)
-
+import re
+import subprocess
 
 class CommandGenerator:
-    """Main command generation logic"""
+    """Generate and execute shell commands from natural language."""
 
-    def __init__(self, config: Config):
-        self.config = config.config
+    def __init__(self, config: dict):
+        """
+        Initialize command generator.
+
+        Args:
+            config: Configuration dictionary
+        """
+        self.config = config
         self.provider = self._get_provider()
 
-    def _get_provider(self) -> LLMProvider:
-        """Get the configured LLM provider"""
+    def _get_provider(self):
+        """
+        Get the configured LLM provider instance.
+
+        Returns:
+            Provider instance
+
+        Raises:
+            SystemExit: If provider is not configured
+        """
         provider_type = self.config["provider"]
 
         if provider_type == "anthropic":
             api_key = self.config.get("anthropic_api_key")
             if not api_key:
-                print("Error: Anthropic API key not configured. Run: aicmd --setup")
+                print("Error: Anthropic API key not configured. Run: ekko --setup")
+                import sys
+
                 sys.exit(1)
-            return AnthropicProvider(api_key, self.config["anthropic_model"])
+            return get_provider(
+                "anthropic", api_key=api_key, model=self.config["anthropic_model"]
+            )
 
         elif provider_type == "ollama":
-            return OllamaProvider(
-                self.config["ollama_url"], self.config["ollama_model"]
+            return get_provider(
+                "ollama",
+                url=self.config["ollama_url"],
+                model=self.config["ollama_model"],
             )
 
         else:
             print(f"Error: Unknown provider '{provider_type}'")
+            import sys
+
             sys.exit(1)
 
     def clean_command(self, cmd: str) -> str:
-        """Strip markdown and formatting artifacts"""
+        """
+        Strip markdown and formatting artifacts from command.
+
+        Args:
+            cmd: Raw command output from LLM
+
+        Returns:
+            Cleaned command string
+        """
         # Remove markdown code blocks
         cmd = re.sub(r"```[a-z]*\n?", "", cmd)
         cmd = re.sub(r"```\n?", "", cmd)
@@ -437,7 +683,12 @@ class CommandGenerator:
         return lines[0] if lines else ""
 
     def run(self, original_prompt: str):
-        """Main interactive loop"""
+        """
+        Main interactive loop for command generation and execution.
+
+        Args:
+            original_prompt: User's natural language request
+        """
         prompt = original_prompt
         system_prompt = self.config["system_prompt"]
 
@@ -480,9 +731,13 @@ class CommandGenerator:
                 prompt = f"Original: '{original_prompt}'. Previous: '{cmd}'. Issue: {user_input}. Generate corrected command."
                 print("\033[90m↻ revising...\033[0m")
 
+# ============================================================================
+# Command Line Interface
+# ============================================================================
 
+import sys
 def main():
-    """Main entry point"""
+    """Main entry point for ekko CLI."""
     config = Config()
 
     # Handle special commands
@@ -577,9 +832,8 @@ Configuration: ~/.config/ekko/config.json"""
     prompt = " ".join(sys.argv[1:])
 
     # Generate and run
-    generator = CommandGenerator(config)
+    generator = CommandGenerator(config.config)
     generator.run(prompt)
-
 
 if __name__ == "__main__":
     main()
