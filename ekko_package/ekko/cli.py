@@ -75,12 +75,20 @@ def callback(
         None, "--use", help="Switch provider and model (format: provider:model)"
     ),
     version: bool = typer.Option(
-        False, "--version", "-v",
-        callback=version_callback, is_eager=True, help="Show version"
+        False,
+        "--version",
+        "-v",
+        callback=version_callback,
+        is_eager=True,
+        help="Show version",
     ),
     help_flag: bool = typer.Option(
-        False, "--help", "-h",
-        callback=help_callback, is_eager=True, help="Show help message"
+        False,
+        "--help",
+        "-h",
+        callback=help_callback,
+        is_eager=True,
+        help="Show help message",
     ),
 ):
     """

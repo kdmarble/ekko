@@ -332,10 +332,19 @@ class Config:
             api_key = self.config.get("anthropic_api_key", "")
             anthropic_model = self.config.get("anthropic_model", "")
             if api_key and self._validate_api_key(api_key):
-                masked_key = "sk-ant-..." + api_key[-4:] if len(api_key) > 4 else "***"
-                table.add_row("anthropic", "○ Available", anthropic_model, f"Key: {masked_key}")
+                masked_key = (
+                    "sk-ant-..." + api_key[-4:] if len(api_key) > 4 else "***"
+                )
+                table.add_row(
+                    "anthropic", "○ Available", anthropic_model, f"Key: {masked_key}"
+                )
             else:
-                table.add_row("anthropic", "[red]Not configured[/red]", "-", "Run: ekko --setup")
+                table.add_row(
+                    "anthropic",
+                    "[red]Not configured[/red]",
+                    "-",
+                    "Run: ekko --setup",
+                )
 
         # Ollama provider
         if provider == "ollama":
@@ -346,9 +355,13 @@ class Config:
             ollama_url = self.config.get("ollama_url", "")
             ollama_model = self.config.get("ollama_model", "")
             if ollama_url and self._validate_url(ollama_url):
-                table.add_row("ollama", "○ Available", ollama_model, f"URL: {ollama_url}")
+                table.add_row(
+                    "ollama", "○ Available", ollama_model, f"URL: {ollama_url}"
+                )
             else:
-                table.add_row("ollama", "[red]Not configured[/red]", "-", "Run: ekko --setup")
+                table.add_row(
+                    "ollama", "[red]Not configured[/red]", "-", "Run: ekko --setup"
+                )
 
         console.print(table)
         console.print()
