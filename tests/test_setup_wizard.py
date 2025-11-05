@@ -79,7 +79,7 @@ class TestSetupWizard:
 
         # Run setup wizard
         child = pexpect.spawn(
-            'python3', ['ekko.py', '--setup'],
+            'python3', ['-m', 'ekko.cli', '--setup'],
             cwd=Path(__file__).parent.parent,
             env=env,
             timeout=10
@@ -125,7 +125,7 @@ class TestSetupWizard:
         env = self.get_test_env()
 
         child = pexpect.spawn(
-            'python3', ['ekko.py', '--setup'],
+            'python3', ['-m', 'ekko.cli', '--setup'],
             cwd=Path(__file__).parent.parent,
             env=env,
             timeout=10
@@ -163,7 +163,7 @@ class TestSetupWizard:
         env = self.get_test_env()
 
         child = pexpect.spawn(
-            'python3', ['ekko.py', '--setup'],
+            'python3', ['-m', 'ekko.cli', '--setup'],
             cwd=Path(__file__).parent.parent,
             env=env,
             timeout=10
@@ -207,7 +207,7 @@ class TestSetupWizard:
         env = self.get_test_env()
 
         child = pexpect.spawn(
-            'python3', ['ekko.py', '--setup'],
+            'python3', ['-m', 'ekko.cli', '--setup'],
             cwd=Path(__file__).parent.parent,
             env=env,
             timeout=10
@@ -262,7 +262,7 @@ class TestSetupWizard:
 
         # Try to run ekko with corrupted config
         child = pexpect.spawn(
-            'python3', ['ekko.py', '--help'],
+            'python3', ['-m', 'ekko.cli', '--help'],
             cwd=Path(__file__).parent.parent,
             env=env,
             timeout=10
@@ -289,7 +289,7 @@ class TestSetupWizard:
         env = self.get_test_env()
 
         child = pexpect.spawn(
-            'python3', ['ekko.py', '--setup'],
+            'python3', ['-m', 'ekko.cli', '--setup'],
             cwd=Path(__file__).parent.parent,
             env=env,
             timeout=10
@@ -328,7 +328,7 @@ class TestSetupWizard:
         env = self.get_test_env()
 
         child = pexpect.spawn(
-            'python3', ['ekko.py', '--setup'],
+            'python3', ['-m', 'ekko.cli', '--setup'],
             cwd=Path(__file__).parent.parent,
             env=env,
             timeout=10

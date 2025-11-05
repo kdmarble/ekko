@@ -5,6 +5,53 @@ All notable changes to ekko will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2025-11-05
+
+### Added
+- **Typer CLI framework** for modern command-line interface
+  - Maintained flag-based interface (--setup, --config, etc.) for natural language compatibility
+  - Better help formatting and error handling
+  - Improved command-line parsing and validation
+- **Rich terminal output** for enhanced visual experience
+  - Beautiful tables for configuration display
+  - Colored and styled command output
+  - Consistent formatting throughout the application
+  - Replaced raw ANSI escape codes with Rich styling
+
+### Changed
+- **BREAKING**: Simplified to package-only distribution
+  - Removed single-file distribution (build.py and ekko.py)
+  - Installation now uses pipx for isolated, portable installation
+  - Updated install-ekko.sh to automatically install and use pipx
+  - Streamlined build process focuses on Python package
+- **Dependencies**:
+  - Added typer>=0.9.0 (includes Rich automatically)
+  - Updated requirements for better terminal experience
+- **Installation**:
+  - pipx-based installation for better isolation and cross-platform portability
+  - Simpler, more reliable installation process
+  - Automatic pipx installation if not present
+
+### Improved
+- Configuration display now shows providers in a formatted table
+- Command output uses Rich console for better readability
+- Error messages and prompts are more visually distinct
+- Help text is cleaner and better organized
+- Development workflow simplified with package-only focus
+
+### Documentation
+- Updated README.md with new installation methods
+- Updated DEVELOPMENT.md with Typer patterns and simplified build docs
+- Updated CONTRIBUTING.md with Rich usage guidelines
+- Updated all examples to reflect new installation process
+- Removed single-file build documentation
+
+### Development
+- Makefile updated to remove build target
+- Test suite updated for new output formats
+- Simplified development setup with editable installs
+- Package building uses python -m build
+
 ## [1.2.0] - 2025-11-05
 
 ### Changed

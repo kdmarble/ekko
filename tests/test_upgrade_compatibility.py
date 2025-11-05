@@ -23,7 +23,7 @@ class TestUpgradeCompatibility:
         self.test_dir = None
         self.passed = 0
         self.failed = 0
-        self.ekko_script = Path(__file__).parent.parent / "ekko.py"
+        self.ekko_package = Path(__file__).parent.parent / "ekko_package"
 
     def setup_test_env(self, config_data):
         """Create a test environment with a specific config version"""
@@ -69,12 +69,11 @@ class TestUpgradeCompatibility:
         if env is None:
             env = os.environ.copy()
             env['HOME'] = self.test_dir
-            # Preserve Python path so subprocess can find installed modules
-            if 'PYTHONPATH' not in env:
-                env['PYTHONPATH'] = ':'.join(sys.path)
+            # Add package to Python path
+            env['PYTHONPATH'] = str(self.ekko_package)
 
         result = subprocess.run(
-            ['python3', str(self.ekko_script)] + args,
+            ['python3', '-m', 'ekko.cli'] + args,
             env=env,
             capture_output=True,
             text=True
