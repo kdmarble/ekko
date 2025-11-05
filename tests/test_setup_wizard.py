@@ -261,8 +261,8 @@ class TestSetupWizard:
 
         # Try to run ekko with corrupted config
         child = pexpect.spawn(
-            'python3', ['-m', 'ekko.cli', '--help'],
-            
+            'python3', ['-m', 'ekko.cli', '--config'],
+
             env=env,
             timeout=10
         )
