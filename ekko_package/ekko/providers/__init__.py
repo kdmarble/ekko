@@ -32,7 +32,5 @@ def get_provider(provider_name: str, **kwargs):
     provider_class = PROVIDERS.get(provider_name.lower())
     if not provider_class:
         available = ", ".join(PROVIDERS.keys())
-        raise ValueError(
-            f"Unknown provider '{provider_name}'. Available: {available}"
-        )
+        raise ValueError(f"Unknown provider '{provider_name}'. Available: {available}")
     return provider_class(**kwargs)

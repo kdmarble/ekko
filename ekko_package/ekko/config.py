@@ -199,7 +199,9 @@ class Config:
                     self.config["anthropic_api_key"] = api_key
                     break
                 else:
-                    print("⚠ Invalid API key format. Please enter a valid Anthropic API key.")
+                    print(
+                        "⚠ Invalid API key format. Please enter a valid Anthropic API key."
+                    )
 
             # Get model name (with validation)
             model = self._get_input(f"Model [{self.config['anthropic_model']}]: ")

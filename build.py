@@ -32,6 +32,22 @@ def read_module(file_path: Path) -> str:
     content = re.sub(r"^from ekko\..*$", "", content, flags=re.MULTILINE)
     content = re.sub(r"^import ekko\..*$", "", content, flags=re.MULTILINE)
 
+    # Remove standard library imports that are already in the main file
+    # These are declared at the top of the generated file
+    stdlib_imports = [
+        r"^import sys\s*$",
+        r"^import os\s*$",
+        r"^import json\s*$",
+        r"^import subprocess\s*$",
+        r"^import re\s*$",
+        r"^import requests\s*$",
+        r"^from pathlib import Path\s*$",
+        r"^from typing import .*$",
+        r"^from abc import .*$",
+    ]
+    for pattern in stdlib_imports:
+        content = re.sub(pattern, "", content, flags=re.MULTILINE)
+
     return content
 
 

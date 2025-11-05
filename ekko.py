@@ -23,7 +23,6 @@ except ImportError:
 # Base Provider Interface
 # ============================================================================
 
-from abc import ABC, abstractmethod
 
 class LLMProvider(ABC):
     """
@@ -74,12 +73,11 @@ class LLMProvider(ABC):
         """
         return True, None
 
+
 # ============================================================================
 # Anthropic Provider
 # ============================================================================
 
-import sys
-import requests
 
 class AnthropicProvider(LLMProvider):
     """
@@ -160,12 +158,11 @@ class AnthropicProvider(LLMProvider):
 
         return True, None
 
+
 # ============================================================================
 # Ollama Provider
 # ============================================================================
 
-import sys
-import requests
 
 class OllamaProvider(LLMProvider):
     """
@@ -247,6 +244,7 @@ class OllamaProvider(LLMProvider):
 
         return True, None
 
+
 # ============================================================================
 # Provider Registry
 # ============================================================================
@@ -256,25 +254,20 @@ PROVIDERS = {
     "ollama": OllamaProvider,
 }
 
+
 def get_provider(provider_name: str, **kwargs):
     """Get a provider instance by name."""
     provider_class = PROVIDERS.get(provider_name.lower())
     if not provider_class:
         available = ", ".join(PROVIDERS.keys())
-        raise ValueError(
-            f"Unknown provider '{provider_name}'. Available: {available}"
-        )
+        raise ValueError(f"Unknown provider '{provider_name}'. Available: {available}")
     return provider_class(**kwargs)
+
 
 # ============================================================================
 # Configuration Management
 # ============================================================================
 
-import os
-import sys
-import json
-from pathlib import Path
-from typing import Dict, Any
 
 class Config:
     """Manage ekko configuration file and settings."""
@@ -465,7 +458,9 @@ class Config:
                     self.config["anthropic_api_key"] = api_key
                     break
                 else:
-                    print("⚠ Invalid API key format. Please enter a valid Anthropic API key.")
+                    print(
+                        "⚠ Invalid API key format. Please enter a valid Anthropic API key."
+                    )
 
             # Get model name (with validation)
             model = self._get_input(f"Model [{self.config['anthropic_model']}]: ")
@@ -607,12 +602,11 @@ class Config:
 
         print()
 
+
 # ============================================================================
 # Command Generator
 # ============================================================================
 
-import re
-import subprocess
 
 class CommandGenerator:
     """Generate and execute shell commands from natural language."""
@@ -731,11 +725,12 @@ class CommandGenerator:
                 prompt = f"Original: '{original_prompt}'. Previous: '{cmd}'. Issue: {user_input}. Generate corrected command."
                 print("\033[90m↻ revising...\033[0m")
 
+
 # ============================================================================
 # Command Line Interface
 # ============================================================================
 
-import sys
+
 def main():
     """Main entry point for ekko CLI."""
     config = Config()
@@ -834,6 +829,7 @@ Configuration: ~/.config/ekko/config.json"""
     # Generate and run
     generator = CommandGenerator(config.config)
     generator.run(prompt)
+
 
 if __name__ == "__main__":
     main()
