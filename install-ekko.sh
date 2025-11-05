@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # ekko installer
-# Works on Linux, macOS, and WSL
+# Works on Linux and macOS
 #
 
 set -e

@@ -7,8 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **BREAKING**: Windows support deprecated - ekko now only supports Linux and macOS
+  - Removed Windows-specific code paths and CON console handling
+  - Simplified TTY input handling for Unix-like systems
+  - Removed Windows installation instructions and references
+  - README streamlined and made more concise for better project visibility
+
+### Added
+- Provider plugin infrastructure for easier third-party provider integration
+- GitHub Actions CI/CD workflow for automated testing and releases
+- Cleaner repository structure in preparation for expanded provider support
+
 ### Planned
-- Additional AI provider support (OpenAI, Google Gemini)
+- Additional AI provider support (OpenAI, Google Gemini, Cohere)
 - Command history and favorites
 - Bash/Zsh completion scripts
 - Configuration profiles for different use cases

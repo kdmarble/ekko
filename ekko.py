@@ -27,19 +27,13 @@ class Config:
         self.config = self.load_config()
 
     def _get_input(self, prompt: str) -> str:
-        """Get input from TTY/console instead of stdin to handle piped installation scripts"""
+        """Get input from TTY instead of stdin to handle piped installation scripts"""
         try:
-            # Try to open TTY directly (Unix/Linux/macOS/WSL)
-            if sys.platform != 'win32':
-                with open('/dev/tty', 'r') as tty:
-                    # Print to stdout so user sees the prompt
-                    print(prompt, end='', flush=True)
-                    return tty.readline().strip()
-            else:
-                # On Windows, try to open CON
-                with open('CON', 'r') as con:
-                    print(prompt, end='', flush=True)
-                    return con.readline().strip()
+            # Open TTY directly to avoid reading from piped stdin
+            with open('/dev/tty', 'r') as tty:
+                # Print to stdout so user sees the prompt
+                print(prompt, end='', flush=True)
+                return tty.readline().strip()
         except (IOError, OSError, FileNotFoundError):
             # Fall back to regular input if TTY is not available
             return input(prompt).strip()
@@ -540,7 +534,7 @@ Configuration: ~/.config/ekko/config.json""")
             return
 
         if sys.argv[1] in ['--version', '-v']:
-            print("ekko v1.1.1")
+            print("ekko v1.2.0-dev")
             return
     
     # Check if configured

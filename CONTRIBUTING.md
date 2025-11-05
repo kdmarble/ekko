@@ -41,7 +41,7 @@ We actively welcome your pull requests! Areas we'd love help with:
 
 - Additional AI provider integrations (OpenAI, Google Gemini, etc.)
 - Enhanced command parsing and validation
-- Cross-platform compatibility improvements
+- Platform compatibility improvements (Linux, macOS)
 - Documentation improvements
 - Bug fixes
 - Test coverage
@@ -183,7 +183,7 @@ ekko has a comprehensive automated test suite using `pexpect` for interactive te
 ```bash
 # Setup test environment (one time)
 python3 -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+source .venv/bin/activate
 pip install pexpect requests
 
 # Run all tests
@@ -258,10 +258,8 @@ Test your changes across different scenarios:
    - Ollama (multiple models)
 
 2. **Different platforms**
-   - Linux
+   - Linux (various distributions)
    - macOS
-   - Windows
-   - WSL
 
 3. **Different shell commands**
    - File operations
