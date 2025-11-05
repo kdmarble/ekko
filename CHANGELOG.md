@@ -7,8 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **BREAKING**: Windows support deprecated - ekko now only supports Linux and macOS
+  - Removed Windows-specific code paths and CON console handling
+  - Simplified TTY input handling for Unix-like systems
+  - Removed Windows installation instructions and references
+  - README streamlined and made more concise for better project visibility
+
+### Added
+- **Modular architecture** with clean separation of concerns
+  - Provider system: Extensible plugin architecture for AI providers
+  - Base provider interface for easy third-party provider integration
+  - Separate modules: cli.py, config.py, generator.py, providers/
+  - Build system: Combines modular code into single-file distribution
+- **Dual distribution model**:
+  - Development: Modular package structure in `ekko_package/`
+  - Distribution: Single-file `ekko.py` for easy installation
+  - Package: Proper Python package with setup.py and pyproject.toml
+- **Build infrastructure**:
+  - `build.py`: Automated single-file builder
+  - Generates standalone ekko.py from modular source
+  - CI/CD integration for automated builds and releases
+- **Enhanced documentation**:
+  - DEVELOPMENT.md: Complete architecture and contribution guide
+  - Provider documentation in providers/README.md
+  - Build process documentation
+- **Improved provider system**:
+  - Provider registry for auto-discovery
+  - Validation methods in base provider class
+  - Consistent error handling across providers
+- GitHub Actions CI/CD workflow for automated testing and releases
+
 ### Planned
-- Additional AI provider support (OpenAI, Google Gemini)
+- Additional AI provider support (OpenAI, Google Gemini, Cohere)
 - Command history and favorites
 - Bash/Zsh completion scripts
 - Configuration profiles for different use cases

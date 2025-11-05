@@ -38,6 +38,15 @@ class TestSetupWizard:
         print(f"📁 Test directory: {self.test_dir}")
         return config_dir
 
+    def get_test_env(self):
+        """Get environment with test HOME and preserved Python paths"""
+        env = os.environ.copy()
+        env['HOME'] = self.test_dir
+        # Preserve Python path so subprocess can find installed modules
+        if 'PYTHONPATH' not in env:
+            env['PYTHONPATH'] = ':'.join(sys.path)
+        return env
+
     def cleanup_test_env(self):
         """Clean up test environment"""
         if self.test_dir and Path(self.test_dir).exists():
@@ -65,9 +74,8 @@ class TestSetupWizard:
         """Test setup wizard with valid Ollama inputs"""
         config_dir = self.setup_test_env()
 
-        # Set HOME to test directory
-        env = os.environ.copy()
-        env['HOME'] = self.test_dir
+        # Get test environment with preserved Python paths
+        env = self.get_test_env()
 
         # Run setup wizard
         child = pexpect.spawn(
@@ -114,8 +122,7 @@ class TestSetupWizard:
         """Test setup wizard with custom Ollama URL"""
         config_dir = self.setup_test_env()
 
-        env = os.environ.copy()
-        env['HOME'] = self.test_dir
+        env = self.get_test_env()
 
         child = pexpect.spawn(
             'python3', ['ekko.py', '--setup'],
@@ -153,8 +160,7 @@ class TestSetupWizard:
         """Test that invalid URLs are rejected"""
         config_dir = self.setup_test_env()
 
-        env = os.environ.copy()
-        env['HOME'] = self.test_dir
+        env = self.get_test_env()
 
         child = pexpect.spawn(
             'python3', ['ekko.py', '--setup'],
@@ -198,8 +204,7 @@ class TestSetupWizard:
         """Test that suspicious model names are rejected"""
         config_dir = self.setup_test_env()
 
-        env = os.environ.copy()
-        env['HOME'] = self.test_dir
+        env = self.get_test_env()
 
         child = pexpect.spawn(
             'python3', ['ekko.py', '--setup'],
@@ -253,8 +258,7 @@ class TestSetupWizard:
         with open(config_file, 'w') as f:
             json.dump(corrupted_config, f)
 
-        env = os.environ.copy()
-        env['HOME'] = self.test_dir
+        env = self.get_test_env()
 
         # Try to run ekko with corrupted config
         child = pexpect.spawn(
@@ -282,8 +286,7 @@ class TestSetupWizard:
         """Test setup wizard with valid Anthropic inputs"""
         config_dir = self.setup_test_env()
 
-        env = os.environ.copy()
-        env['HOME'] = self.test_dir
+        env = self.get_test_env()
 
         child = pexpect.spawn(
             'python3', ['ekko.py', '--setup'],
@@ -322,8 +325,7 @@ class TestSetupWizard:
         """Test that invalid API keys are rejected"""
         config_dir = self.setup_test_env()
 
-        env = os.environ.copy()
-        env['HOME'] = self.test_dir
+        env = self.get_test_env()
 
         child = pexpect.spawn(
             'python3', ['ekko.py', '--setup'],

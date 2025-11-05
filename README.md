@@ -12,46 +12,38 @@ find ~/Downloads -type f -size +500M
 # executes command
 ```
 
-## Features
+## Why ekko?
 
-- 🤖 **Multiple AI Providers**: Supports Anthropic API and local Ollama
-- 💬 **Interactive Workflow**: Approve, deny, or request corrections before execution
-- 🔄 **Iterative Corrections**: Refine commands through natural language feedback
-- 🚀 **Cross-Platform**: Works on Linux, macOS, Windows, and WSL
-- 🎯 **Simple Command**: Just type `ekko` followed by what you want
+- 🤖 **Multiple AI Providers**: Anthropic API and local Ollama
+- 💬 **Interactive Workflow**: Approve, deny, or request corrections
+- 🔄 **Iterative Refinement**: Refine commands through natural language
 - 🔒 **Privacy-First**: Use local Ollama models for complete privacy
+- 🚀 **Simple**: Just type `ekko` followed by what you want
+
+## Quick Start
+
+```bash
+# Install
+curl -fsSL https://raw.githubusercontent.com/kdmarble/ekko/main/install-ekko.sh | bash
+
+# Try it
+ekko find all files over 500MB
+```
 
 ## Installation
 
-### Linux / macOS / WSL
-
 ```bash
+# Download and install
 curl -fsSL https://raw.githubusercontent.com/kdmarble/ekko/main/install-ekko.sh | bash
-```
 
-Or manually:
-
-```bash
-# Download
+# Or manually
 curl -fsSL https://raw.githubusercontent.com/kdmarble/ekko/main/ekko.py -o ~/.local/bin/ekko
 chmod +x ~/.local/bin/ekko
-
-# Install dependencies
 pip install requests --user
-
-# Configure
 ekko --setup
 ```
 
-### Windows
-
-```powershell
-# Download install script
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/kdmarble/ekko/main/install-ekko.ps1" -OutFile "install-ekko.ps1"
-
-# Run installer
-powershell -ExecutionPolicy Bypass -File install-ekko.ps1
-```
+**Requirements**: Python 3.7+, Linux or macOS
 
 ## Configuration
 
@@ -61,242 +53,130 @@ Run the setup wizard:
 ekko --setup
 ```
 
-### Option 1: Anthropic API (Recommended for Quality)
+### Anthropic API (Best Quality)
 
-1. Get an API key from [console.anthropic.com](https://console.anthropic.com)
-2. Select "Anthropic API" in setup wizard
-3. Enter your API key
-4. Default model: `claude-sonnet-4-20250514`
+1. Get API key from [console.anthropic.com](https://console.anthropic.com)
+2. Select "Anthropic API" in setup
+3. Default model: `claude-sonnet-4-5-20250929`
 
-**Pros**: Best quality, fast responses, no local setup  
-**Cons**: Costs money (~$3 per 1M input tokens)
+**Pros**: Best quality, fast
+**Cons**: Costs ~$3 per 1M tokens
 
-### Option 2: Ollama (Recommended for Privacy)
+### Ollama (Best Privacy)
 
-1. Install Ollama from [ollama.com](https://ollama.com)
-2. Pull a model: `ollama pull llama3.2`
-3. Select "Ollama" in setup wizard
-4. Use default settings
+1. Install from [ollama.com](https://ollama.com)
+2. Pull a model: `ollama pull qwen3-coder`
+3. Select "Ollama" in setup
 
-**Pros**: Free, private, works offline  
-**Cons**: Requires ~4GB RAM, slower on CPU
+**Pros**: Free, private, offline
+**Cons**: Requires ~2-4GB RAM
 
-### Manual Configuration
+### Switch Providers Anytime
 
-Edit `~/.config/ekko/config.json` (Linux/macOS) or `%APPDATA%\ekko\config.json` (Windows):
-
-```json
-{
-  "provider": "anthropic",
-  "anthropic_api_key": "sk-ant-...",
-  "anthropic_model": "claude-sonnet-4-20250514",
-  "ollama_url": "http://localhost:11434",
-  "ollama_model": "llama3.2",
-  "system_prompt": "You are a shell expert. Output ONLY the command to solve the problem. No explanation, no markdown, no backticks - just the raw shell command."
-}
+```bash
+ekko --config                    # Show current config
+ekko --switch ollama             # Switch to Ollama
+ekko --switch anthropic          # Switch to Anthropic
+ekko --model qwen3-coder         # Change model
+ekko --use ollama:qwen3-coder    # Switch both at once
 ```
 
-## Usage
-
-### Basic Examples
+## Usage Examples
 
 ```bash
 # Find files
 ekko find all files over 500MB
-ekko show me disk usage sorted by size
 
 # Git operations
 ekko git reset to 3 commits ago
-ekko show git log for last week
 
 # Process management
 ekko kill process using port 3000
-ekko show all python processes
 
 # Archives
 ekko compress this folder to tar.gz
-ekko extract this zip preserving permissions
 
 # Network
 ekko show all listening ports
-ekko test if port 443 is open on example.com
-```
-
-### Interactive Workflow
-
-1. **Type your request**: `ekko find large log files`
-2. **Review command**: Command is displayed in cyan
-3. **Choose action**:
-   - Press **Enter** or **Y** to run
-   - Type **N** to cancel
-   - Type **correction** to refine (e.g., "only in /var/log")
-
-### Example Session
-
-```bash
-❯ ekko compress this folder
-tar -czf folder.tar.gz folder/
-[enter=run, n=cancel, or describe what's wrong]: exclude node_modules
-↻ revising...
-tar --exclude='node_modules' -czf folder.tar.gz folder/
-[enter=run, n=cancel, or describe what's wrong]: ⏎
-# creates archive
 ```
 
 ## Recommended Models
 
-### Anthropic API
-- `claude-sonnet-4-20250514` - Best balance (default)
-- `claude-opus-4-20250514` - Highest quality, slower
+**Anthropic API**:
+- `claude-sonnet-4-5-20250929` - Best balance (default)
+- `claude-opus-4-20250514` - Highest quality
 - `claude-haiku-4-20250514` - Faster, cheaper
 
-### Ollama
-- `llama3.2` - Fast, good quality (default, 2GB)
-- `codellama` - Better for complex commands (4GB)
-- `mistral` - Balanced option (4GB)
-- `llama3.2:70b` - Best quality if you have resources (40GB)
+**Ollama**:
+- `qwen3-coder` - Fast, code-focused (default)
+- `llama3.2` - Good general purpose
+- `codellama` - Complex commands
+- `mistral` - Balanced option
 
-Pull models with: `ollama pull <model-name>`
+Pull models: `ollama pull <model-name>`
+
+## Security
+
+- ⚠️ **Always review commands** before pressing Enter
+- 🔐 API keys stored in `~/.config/ekko/config.json` (user-only permissions)
+- 🏠 Commands run with your shell permissions
+- 🔒 Ollama models never send data externally
 
 ## Troubleshooting
 
-### "Command not found: ekko"
-
-Reload your shell:
+**Command not found**:
 ```bash
-source ~/.zshrc  # or ~/.bashrc
+source ~/.bashrc  # or ~/.zshrc
 ```
 
-Or check PATH:
+**Anthropic API errors**:
+- Check API key: `ekko --config`
+- Reconfigure: `ekko --setup`
+
+**Ollama connection errors**:
 ```bash
-echo $PATH | grep -o "$HOME/.local/bin"
+curl http://localhost:11434/api/tags  # Check if running
+ollama serve                           # Start Ollama
+ollama pull qwen3-coder                # Install model
 ```
 
-### Anthropic API Errors
+## Contributing
 
-- **401 Unauthorized**: Check API key in config
-- **429 Rate Limited**: Wait a moment or upgrade plan
-- **Overloaded**: Try again
+We welcome contributions! ekko uses a **modular development structure** but distributes as a single file for easy installation.
 
-### Ollama Connection Errors
+**Development docs**: [DEVELOPMENT.md](DEVELOPMENT.md)
 
+**Quick start for contributors**:
 ```bash
-# Check if Ollama is running
-curl http://localhost:11434/api/tags
-
-# Start Ollama
-ollama serve
-
-# Pull model if missing
-ollama pull llama3.2
+git clone https://github.com/kdmarble/ekko.git
+cd ekko
+# Edit files in ekko_package/ekko/
+python3 build.py  # Build single-file distribution
+python3 tests/test_*.py  # Run tests
 ```
 
-### Python Module Missing
+See [CONTRIBUTING.md](CONTRIBUTING.md) for:
+- Adding new AI providers
+- Code style guidelines
+- Testing requirements
+- Pull request process
+
+**Current priorities**:
+- Expanded provider support (OpenAI, Google Gemini, Cohere)
+- Enhanced command parsing
+- Bash/Zsh completions
+
+## Uninstall
 
 ```bash
-pip install requests --user
-# or
-python3 -m pip install requests --user
+rm ~/.local/bin/ekko
+rm -rf ~/.config/ekko
 ```
-
-## Security Considerations
-
-- ⚠️ **Review before execution**: Always check commands before pressing Enter
-- 🔐 **API keys**: Stored in `~/.config/ekko/config.json` with user-only permissions
-- 🏠 **Local execution**: Commands run in your shell with your permissions
-- 🔒 **Ollama privacy**: Local models never send data to external servers
-
-## Uninstallation
-
-```bash
-# Remove binary
-rm ~/.local/bin/ekko  # Linux/macOS
-rm -rf "$LOCALAPPDATA/ekko"  # Windows
-
-# Remove config
-rm -rf ~/.config/ekko  # Linux/macOS
-rm -rf "$APPDATA/ekko"  # Windows
-```
-
-## Requirements
-
-- **Python**: 3.7 or later
-- **Dependencies**: `requests` (auto-installed)
-- **Storage**: ~10KB for the tool
-- **For Ollama**: 2-40GB depending on model
-
-## Testing
-
-ekko includes a comprehensive test suite to ensure reliability and prevent regressions.
-
-### Running Tests
-
-```bash
-# Setup test environment
-python3 -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-pip install pexpect requests
-
-# Run all tests
-python3 tests/test_setup_wizard.py         # Interactive setup tests (7 tests)
-python3 tests/test_piped_installation.py   # Installation tests (2 tests)
-python3 tests/test_provider_switching.py   # Provider switching tests (10 tests)
-python3 tests/test_upgrade_compatibility.py # Upgrade compatibility tests (5 tests)
-```
-
-### Test Coverage
-
-**Setup Wizard Tests** (7 tests):
-- ✅ Valid Ollama and Anthropic configurations
-- ✅ URL validation (rejects invalid formats)
-- ✅ Model name validation (detects injection attempts)
-- ✅ API key validation
-- ✅ Corrupted config detection
-
-**Installation Tests** (2 tests):
-- ✅ Piped installation scenario testing (`curl ... | bash`)
-- ✅ TTY input redirection for piped installations
-
-**Provider Switching Tests** (10 tests):
-- ✅ Display configuration with `--config`
-- ✅ Switch between providers with `--switch`
-- ✅ Change models with `--model`
-- ✅ Combo switching with `--use`
-- ✅ Settings persistence across provider changes
-- ✅ Validation of invalid providers and models
-- ✅ Error handling for unconfigured providers
-
-**Upgrade Compatibility Tests** (5 tests):
-- ✅ v1.0.1 configs work seamlessly with v1.1.0
-- ✅ Config structure unchanged (no migration needed)
-- ✅ Both provider settings preserved during upgrade
-- ✅ New switching commands work with old configs
-- ✅ Backward compatibility verified
-
-**What's Tested**:
-- Interactive setup wizard with various inputs
-- Configuration file validation
-- Installation script behavior in piped environments
-- Provider and model switching functionality
-- Settings persistence and configuration management
-- Version upgrade compatibility (v1.0.1 → v1.1.0)
-- Error handling and user guidance
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for details on adding new tests.
 
 ## License
 
-MIT License - See LICENSE file for details
-
-## Why ekko?
-
-The name **ekko** is a play on the shell `echo` command - it echoes back what you need, but smarter. The double 'k' makes it unique and memorable.
+MIT License - See [LICENSE](LICENSE) for details.
 
 ---
 
-**Get started in 60 seconds:**
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/kdmarble/ekko/main/install-ekko.sh | bash
-ekko find all files over 500MB
-```
+**The name?** A play on `echo` - it echoes back what you need, but smarter.

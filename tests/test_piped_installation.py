@@ -38,6 +38,9 @@ def test_piped_installation():
         env['HOME'] = test_dir
         env['INSTALL_DIR'] = f"{test_dir}/.local/bin"
         env['CONFIG_DIR'] = f"{test_dir}/.config/ekko"
+        # Preserve Python path so subprocess can find installed modules
+        if 'PYTHONPATH' not in env:
+            env['PYTHONPATH'] = ':'.join(sys.path)
 
         # Create install directory
         install_dir = Path(test_dir) / ".local" / "bin"
@@ -168,6 +171,9 @@ def test_actual_installation_script():
         env = os.environ.copy()
         env['HOME'] = test_dir
         env['PATH'] = f"{test_dir}/.local/bin:{env.get('PATH', '')}"
+        # Preserve Python path so subprocess can find installed modules
+        if 'PYTHONPATH' not in env:
+            env['PYTHONPATH'] = ':'.join(sys.path)
 
         # Run the installation script (simulating cat install.sh | bash)
         # But we'll use pexpect to provide interactive input
