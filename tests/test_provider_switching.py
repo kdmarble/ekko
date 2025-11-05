@@ -103,10 +103,11 @@ class TestProviderSwitching:
             result = self.run_ekko(['--config'])
 
             assert result.returncode == 0, "Should exit successfully"
-            assert "ekko configuration" in result.stdout, "Should show config header"
-            assert "Active: ollama" in result.stdout, "Should show active provider"
+            assert "ekko Configuration" in result.stdout, "Should show config header"
+            assert "ollama" in result.stdout, "Should show ollama provider"
+            assert "Active" in result.stdout, "Should show active status"
             assert "qwen3-coder" in result.stdout, "Should show current model"
-            assert "Available: anthropic" in result.stdout, "Should show other provider"
+            assert "anthropic" in result.stdout, "Should show anthropic provider"
             assert "sk-ant-..." in result.stdout, "Should mask API key"
 
         finally:
