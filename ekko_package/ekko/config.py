@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Dict, Any
 from rich.console import Console
 from rich.table import Table
-from rich.panel import Panel
 from ekko.providers import PROVIDERS
 
 console = Console()
