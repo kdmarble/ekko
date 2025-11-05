@@ -56,15 +56,32 @@ Configuration: ~/.config/ekko/config.json""")
 
 @app.callback(invoke_without_command=True)
 def callback(
-    ctx: typer.Context,
-    prompt: Optional[List[str]] = typer.Argument(None, help="Natural language prompt for command generation"),
-    setup: bool = typer.Option(False, "--setup", help="Run configuration wizard"),
-    config_show: bool = typer.Option(False, "--config", help="Show current configuration"),
-    switch: Optional[str] = typer.Option(None, "--switch", help="Switch AI provider (ollama/anthropic)"),
-    model: Optional[str] = typer.Option(None, "--model", help="Change model for current provider"),
-    use: Optional[str] = typer.Option(None, "--use", help="Switch provider and model (format: provider:model)"),
-    version: bool = typer.Option(False, "--version", "-v", callback=version_callback, is_eager=True, help="Show version"),
-    help_flag: bool = typer.Option(False, "--help", "-h", callback=help_callback, is_eager=True, help="Show help message"),
+    prompt: Optional[List[str]] = typer.Argument(
+        None, help="Natural language prompt for command generation"
+    ),
+    setup: bool = typer.Option(
+        False, "--setup", help="Run configuration wizard"
+    ),
+    config_show: bool = typer.Option(
+        False, "--config", help="Show current configuration"
+    ),
+    switch: Optional[str] = typer.Option(
+        None, "--switch", help="Switch AI provider (ollama/anthropic)"
+    ),
+    model: Optional[str] = typer.Option(
+        None, "--model", help="Change model for current provider"
+    ),
+    use: Optional[str] = typer.Option(
+        None, "--use", help="Switch provider and model (format: provider:model)"
+    ),
+    version: bool = typer.Option(
+        False, "--version", "-v",
+        callback=version_callback, is_eager=True, help="Show version"
+    ),
+    help_flag: bool = typer.Option(
+        False, "--help", "-h",
+        callback=help_callback, is_eager=True, help="Show help message"
+    ),
 ):
     """
     ekko - AI-powered command line assistant
