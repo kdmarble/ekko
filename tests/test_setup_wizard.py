@@ -42,9 +42,9 @@ class TestSetupWizard:
         """Get environment with test HOME and preserved Python paths"""
         env = os.environ.copy()
         env['HOME'] = self.test_dir
-        # Preserve Python path so subprocess can find installed modules
-        if 'PYTHONPATH' not in env:
-            env['PYTHONPATH'] = ':'.join(sys.path)
+        # Add ekko_package to Python path so subprocess can import ekko
+        ekko_package = str(Path(__file__).parent.parent / "ekko_package")
+        env['PYTHONPATH'] = ekko_package
         return env
 
     def cleanup_test_env(self):
@@ -79,8 +79,7 @@ class TestSetupWizard:
 
         # Run setup wizard
         child = pexpect.spawn(
-            'python3', ['ekko.py', '--setup'],
-            cwd=Path(__file__).parent.parent,
+            'python3', ['-m', 'ekko.cli', '--setup'],
             env=env,
             timeout=10
         )
@@ -125,8 +124,8 @@ class TestSetupWizard:
         env = self.get_test_env()
 
         child = pexpect.spawn(
-            'python3', ['ekko.py', '--setup'],
-            cwd=Path(__file__).parent.parent,
+            'python3', ['-m', 'ekko.cli', '--setup'],
+            
             env=env,
             timeout=10
         )
@@ -163,8 +162,8 @@ class TestSetupWizard:
         env = self.get_test_env()
 
         child = pexpect.spawn(
-            'python3', ['ekko.py', '--setup'],
-            cwd=Path(__file__).parent.parent,
+            'python3', ['-m', 'ekko.cli', '--setup'],
+            
             env=env,
             timeout=10
         )
@@ -207,8 +206,8 @@ class TestSetupWizard:
         env = self.get_test_env()
 
         child = pexpect.spawn(
-            'python3', ['ekko.py', '--setup'],
-            cwd=Path(__file__).parent.parent,
+            'python3', ['-m', 'ekko.cli', '--setup'],
+            
             env=env,
             timeout=10
         )
@@ -262,8 +261,8 @@ class TestSetupWizard:
 
         # Try to run ekko with corrupted config
         child = pexpect.spawn(
-            'python3', ['ekko.py', '--help'],
-            cwd=Path(__file__).parent.parent,
+            'python3', ['-m', 'ekko.cli', '--config'],
+
             env=env,
             timeout=10
         )
@@ -289,8 +288,8 @@ class TestSetupWizard:
         env = self.get_test_env()
 
         child = pexpect.spawn(
-            'python3', ['ekko.py', '--setup'],
-            cwd=Path(__file__).parent.parent,
+            'python3', ['-m', 'ekko.cli', '--setup'],
+            
             env=env,
             timeout=10
         )
@@ -328,8 +327,8 @@ class TestSetupWizard:
         env = self.get_test_env()
 
         child = pexpect.spawn(
-            'python3', ['ekko.py', '--setup'],
-            cwd=Path(__file__).parent.parent,
+            'python3', ['-m', 'ekko.cli', '--setup'],
+            
             env=env,
             timeout=10
         )

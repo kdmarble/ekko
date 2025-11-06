@@ -4,7 +4,10 @@ Command generation logic for ekko
 
 import re
 import subprocess
+from rich.console import Console
 from ekko.providers import get_provider
+
+console = Console()
 
 
 class CommandGenerator:
@@ -95,15 +98,16 @@ class CommandGenerator:
                 return
 
             # Display command
-            print(f"\n\033[36m{cmd}\033[0m")
+            console.print()
+            console.print(f"[cyan]{cmd}[/cyan]")
 
             # Get user input
             try:
-                user_input = input(
-                    "\033[90m[enter=run, n=cancel, or describe what's wrong]: \033[0m"
+                user_input = console.input(
+                    "[dim]\\[enter=run, n=cancel, or describe what's wrong]: [/dim]"
                 )
             except (KeyboardInterrupt, EOFError):
-                print()
+                console.print()
                 return
 
             # Handle response
@@ -112,7 +116,7 @@ class CommandGenerator:
                 try:
                     subprocess.run(cmd, shell=True)
                 except KeyboardInterrupt:
-                    print()
+                    console.print()
                 return
 
             elif user_input.lower() in ["n", "no", "q", "quit"]:
@@ -122,4 +126,4 @@ class CommandGenerator:
             else:
                 # Correction - loop with feedback
                 prompt = f"Original: '{original_prompt}'. Previous: '{cmd}'. Issue: {user_input}. Generate corrected command."
-                print("\033[90m↻ revising...\033[0m")
+                console.print("[dim]↻ revising...[/dim]")

@@ -14,9 +14,8 @@ BLUE='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Configuration
-INSTALL_DIR="$HOME/.local/bin"
 CONFIG_DIR="$HOME/.config/ekko"
-REPO_URL="https://raw.githubusercontent.com/kdmarble/ekko/main/ekko.py"
+REPO_URL="https://github.com/kdmarble/ekko"
 
 echo -e "${BLUE}🚀 ekko installer${NC}\n"
 
@@ -37,36 +36,44 @@ if ! python3 -m pip --version &> /dev/null; then
     }
 fi
 
-# Install requests if needed
-if ! python3 -c "import requests" 2>/dev/null; then
-    echo -e "${YELLOW}⚠${NC}  Installing requests module..."
-    python3 -m pip install --user requests --quiet
-fi
+echo -e "${GREEN}✓${NC} pip ready"
 
-echo -e "${GREEN}✓${NC} Dependencies ready"
+# Check for pipx, install if needed
+if ! command -v pipx &> /dev/null; then
+    echo -e "${YELLOW}⚠${NC}  pipx not found, installing..."
+    python3 -m pip install --user pipx
+    python3 -m pipx ensurepath
+    export PATH="$HOME/.local/bin:$PATH"
 
-# Create directories
-mkdir -p "$INSTALL_DIR"
-mkdir -p "$CONFIG_DIR"
-
-# Download or copy ekko
-if [ -f "ekko.py" ]; then
-    echo -e "${BLUE}ℹ${NC}  Installing from local file..."
-    cp ekko.py "$INSTALL_DIR/ekko"
-else
-    echo -e "${BLUE}ℹ${NC}  Downloading ekko..."
-    if command -v curl &> /dev/null; then
-        curl -fsSL "$REPO_URL" -o "$INSTALL_DIR/ekko"
-    elif command -v wget &> /dev/null; then
-        wget -q "$REPO_URL" -O "$INSTALL_DIR/ekko"
-    else
-        echo -e "${RED}Error: Neither curl nor wget found${NC}"
+    if ! command -v pipx &> /dev/null; then
+        echo -e "${RED}Error: pipx installation failed${NC}"
+        echo -e "${YELLOW}You can install manually with: python3 -m pip install --user pipx${NC}"
         exit 1
     fi
 fi
 
-chmod +x "$INSTALL_DIR/ekko"
-echo -e "${GREEN}✓${NC} ekko installed to $INSTALL_DIR/ekko"
+echo -e "${GREEN}✓${NC} pipx ready"
+
+# Create config directory
+mkdir -p "$CONFIG_DIR"
+
+# Install ekko using pipx
+echo -e "${BLUE}ℹ${NC}  Installing ekko..."
+
+if pipx list | grep -q "ekko"; then
+    echo -e "${YELLOW}⚠${NC}  ekko is already installed, upgrading..."
+    pipx upgrade ekko || pipx install --force git+${REPO_URL}.git
+else
+    pipx install git+${REPO_URL}.git
+fi
+
+echo -e "${GREEN}✓${NC} ekko installed"
+
+# Ensure pipx bin directory is in PATH
+PIPX_BIN_DIR=$(python3 -m pipx environment | grep PIPX_BIN_DIR | cut -d= -f2)
+if [[ -z "$PIPX_BIN_DIR" ]]; then
+    PIPX_BIN_DIR="$HOME/.local/bin"
+fi
 
 # Detect shell
 SHELL_NAME=$(basename "$SHELL")
@@ -85,23 +92,22 @@ case "$SHELL_NAME" in
     *)
         echo -e "${YELLOW}⚠${NC}  Unknown shell: $SHELL_NAME"
         echo -e "   Add this to your shell config manually:"
-        echo -e "   ${BLUE}export PATH=\"$INSTALL_DIR:\$PATH\"${NC}"
-        exit 0
+        echo -e "   ${BLUE}export PATH=\"$PIPX_BIN_DIR:\$PATH\"${NC}"
         ;;
 esac
 
-# Add to PATH if needed
-if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
-    echo -e "${BLUE}ℹ${NC}  Adding $INSTALL_DIR to PATH in $SHELL_RC"
-    
-    if [ "$SHELL_NAME" = "fish" ]; then
-        echo "set -gx PATH $INSTALL_DIR \$PATH" >> "$SHELL_RC"
-    else
-        echo "export PATH=\"$INSTALL_DIR:\$PATH\"" >> "$SHELL_RC"
-    fi
-fi
+# Add to PATH if needed and shell RC was determined
+if [ -n "$SHELL_RC" ] && [[ ":$PATH:" != *":$PIPX_BIN_DIR:"* ]]; then
+    echo -e "${BLUE}ℹ${NC}  Adding $PIPX_BIN_DIR to PATH in $SHELL_RC"
 
-echo -e "${GREEN}✓${NC} Shell integration complete"
+    if [ "$SHELL_NAME" = "fish" ]; then
+        echo "set -gx PATH $PIPX_BIN_DIR \$PATH" >> "$SHELL_RC"
+    else
+        echo "export PATH=\"$PIPX_BIN_DIR:\$PATH\"" >> "$SHELL_RC"
+    fi
+
+    echo -e "${GREEN}✓${NC} Shell integration complete"
+fi
 
 # Run setup wizard only if config doesn't exist
 CONFIG_FILE="$CONFIG_DIR/config.json"
@@ -111,14 +117,22 @@ if [ -f "$CONFIG_FILE" ]; then
     echo -e "${BLUE}ℹ${NC}  To reconfigure, run: ${BLUE}ekko --setup${NC}"
 else
     echo -e "\n${BLUE}🔧 Running configuration wizard...${NC}\n"
-    "$INSTALL_DIR/ekko" --setup < /dev/tty
+    ekko --setup < /dev/tty || {
+        echo -e "${YELLOW}⚠${NC}  Couldn't run setup automatically"
+        echo -e "${BLUE}ℹ${NC}  Run 'ekko --setup' manually after reloading your shell"
+    }
 fi
 
 # Final instructions
 echo -e "\n${GREEN}✅ Installation complete!${NC}\n"
-echo -e "Reload your shell:"
-echo -e "  ${BLUE}source $SHELL_RC${NC}"
-echo -e "\nThen try:"
+
+if [ -n "$SHELL_RC" ]; then
+    echo -e "Reload your shell:"
+    echo -e "  ${BLUE}source $SHELL_RC${NC}"
+    echo -e ""
+fi
+
+echo -e "Then try:"
 echo -e "  ${BLUE}ekko find all files over 500MB${NC}"
 echo -e "\nReconfigure anytime with:"
 echo -e "  ${BLUE}ekko --setup${NC}"

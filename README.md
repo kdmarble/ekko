@@ -32,18 +32,30 @@ ekko find all files over 500MB
 
 ## Installation
 
-```bash
-# Download and install
-curl -fsSL https://raw.githubusercontent.com/kdmarble/ekko/main/install-ekko.sh | bash
+### Automated Installation (Recommended)
 
-# Or manually
-curl -fsSL https://raw.githubusercontent.com/kdmarble/ekko/main/ekko.py -o ~/.local/bin/ekko
-chmod +x ~/.local/bin/ekko
-pip install requests --user
+```bash
+# Install using pipx (automatically installed if needed)
+curl -fsSL https://raw.githubusercontent.com/kdmarble/ekko/main/install-ekko.sh | bash
+```
+
+### Manual Installation
+
+**With pipx (recommended for isolation)**:
+```bash
+pipx install git+https://github.com/kdmarble/ekko.git
+ekko --setup
+```
+
+**With pip**:
+```bash
+pip install git+https://github.com/kdmarble/ekko.git
 ekko --setup
 ```
 
 **Requirements**: Python 3.7+, Linux or macOS
+
+**Note**: pipx installs ekko in an isolated environment with all dependencies, preventing conflicts with other Python packages.
 
 ## Configuration
 
@@ -142,17 +154,15 @@ ollama pull qwen3-coder                # Install model
 
 ## Contributing
 
-We welcome contributions! ekko uses a **modular development structure** but distributes as a single file for easy installation.
-
-**Development docs**: [DEVELOPMENT.md](DEVELOPMENT.md)
+We welcome contributions! ekko uses a **modular Python package structure**.
 
 **Quick start for contributors**:
 ```bash
 git clone https://github.com/kdmarble/ekko.git
 cd ekko
+make install         # Install in editable mode
 # Edit files in ekko_package/ekko/
-python3 build.py  # Build single-file distribution
-python3 tests/test_*.py  # Run tests
+make test           # Run tests
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for:
@@ -160,16 +170,23 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for:
 - Code style guidelines
 - Testing requirements
 - Pull request process
+- Using Typer and Rich for CLI development
 
 **Current priorities**:
 - Expanded provider support (OpenAI, Google Gemini, Cohere)
-- Enhanced command parsing
-- Bash/Zsh completions
+- Enhanced command parsing and validation
+- Shell completion support
 
 ## Uninstall
 
 ```bash
-rm ~/.local/bin/ekko
+# If installed with pipx
+pipx uninstall ekko
+
+# If installed with pip
+pip uninstall ekko
+
+# Remove configuration
 rm -rf ~/.config/ekko
 ```
 

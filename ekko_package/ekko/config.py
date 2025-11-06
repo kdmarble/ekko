@@ -7,7 +7,11 @@ import sys
 import json
 from pathlib import Path
 from typing import Dict, Any
+from rich.console import Console
+from rich.table import Table
 from ekko.providers import PROVIDERS
+
+console = Console()
 
 
 class Config:
@@ -302,43 +306,61 @@ class Config:
         """Display current configuration with masked sensitive data."""
         provider = self.config.get("provider", "ollama")
 
-        print("\n🔧 ekko configuration\n")
-        print(f"Config file: {self.config_file}\n")
+        console.print()
+        console.print(f"[dim]Config file: {self.config_file}[/dim]")
+        console.print()
 
-        # Show active provider
+        # Create providers table
+        table = Table(
+            title="🔧 ekko Configuration",
+            show_header=True,
+            header_style="bold cyan",
+            border_style="dim"
+        )
+
+        table.add_column("Provider", style="cyan", width=12)
+        table.add_column("Status", width=10)
+        table.add_column("Model", style="yellow")
+        table.add_column("Details", style="dim")
+
+        # Anthropic provider
         if provider == "anthropic":
             model = self.config.get("anthropic_model", "")
-            print(f"✓ Active: anthropic ({model})")
+            table.add_row("anthropic", "✓ [green]Active[/green]", model, "")
         else:
-            model = self.config.get("ollama_model", "")
-            url = self.config.get("ollama_url", "")
-            print(f"✓ Active: ollama ({model})")
-            print(f"  URL: {url}")
-
-        print()
-
-        # Show other configured providers
-        if provider == "anthropic":
-            # Show Ollama if configured
-            ollama_url = self.config.get("ollama_url", "")
-            ollama_model = self.config.get("ollama_model", "")
-            if ollama_url and self._validate_url(ollama_url):
-                print(f"○ Available: ollama ({ollama_model})")
-                print(f"  URL: {ollama_url}")
-            else:
-                print("○ Not configured: ollama")
-                print("  Run: ekko --setup")
-        else:
-            # Show Anthropic if configured
             api_key = self.config.get("anthropic_api_key", "")
             anthropic_model = self.config.get("anthropic_model", "")
             if api_key and self._validate_api_key(api_key):
-                # Mask API key - show only last 4 characters
-                masked_key = "sk-ant-..." + api_key[-4:] if len(api_key) > 4 else "***"
-                print(f"○ Available: anthropic ({anthropic_model})")
-                print(f"  API Key: {masked_key}")
+                masked_key = (
+                    "sk-ant-..." + api_key[-4:] if len(api_key) > 4 else "***"
+                )
+                table.add_row(
+                    "anthropic", "○ Available", anthropic_model, f"Key: {masked_key}"
+                )
             else:
-                print("○ Not configured: anthropic")
-                print("  Run: ekko --setup")
+                table.add_row(
+                    "anthropic",
+                    "[red]Not configured[/red]",
+                    "-",
+                    "Run: ekko --setup",
+                )
 
-        print()
+        # Ollama provider
+        if provider == "ollama":
+            model = self.config.get("ollama_model", "")
+            url = self.config.get("ollama_url", "")
+            table.add_row("ollama", "✓ [green]Active[/green]", model, f"URL: {url}")
+        else:
+            ollama_url = self.config.get("ollama_url", "")
+            ollama_model = self.config.get("ollama_model", "")
+            if ollama_url and self._validate_url(ollama_url):
+                table.add_row(
+                    "ollama", "○ Available", ollama_model, f"URL: {ollama_url}"
+                )
+            else:
+                table.add_row(
+                    "ollama", "[red]Not configured[/red]", "-", "Run: ekko --setup"
+                )
+
+        console.print(table)
+        console.print()

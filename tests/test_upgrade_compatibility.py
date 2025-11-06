@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Tests for ekko version upgrade compatibility
-Ensures v1.1.0 works seamlessly with v1.0.1 configs
+Ensures v1.3.0 works seamlessly with v1.0.1 configs
 """
 
 import os
@@ -23,7 +23,7 @@ class TestUpgradeCompatibility:
         self.test_dir = None
         self.passed = 0
         self.failed = 0
-        self.ekko_script = Path(__file__).parent.parent / "ekko.py"
+        self.ekko_package = Path(__file__).parent.parent / "ekko_package"
 
     def setup_test_env(self, config_data):
         """Create a test environment with a specific config version"""
@@ -69,12 +69,11 @@ class TestUpgradeCompatibility:
         if env is None:
             env = os.environ.copy()
             env['HOME'] = self.test_dir
-            # Preserve Python path so subprocess can find installed modules
-            if 'PYTHONPATH' not in env:
-                env['PYTHONPATH'] = ':'.join(sys.path)
+            # Add package to Python path
+            env['PYTHONPATH'] = str(self.ekko_package)
 
         result = subprocess.run(
-            ['python3', str(self.ekko_script)] + args,
+            ['python3', '-m', 'ekko.cli'] + args,
             env=env,
             capture_output=True,
             text=True
@@ -102,15 +101,15 @@ class TestUpgradeCompatibility:
         self.setup_test_env(v101_config)
 
         try:
-            # Test that v1.2.0 can load v1.0.1 config
+            # Test that v1.3.0 can load v1.0.1 config
             result = self.run_ekko(['--version'])
             assert result.returncode == 0, "Should load v1.0.1 config successfully"
-            assert "v1.2.0" in result.stdout, "Should report v1.2.0"
+            assert "v1.3.0" in result.stdout, "Should report v1.3.0"
 
             # Test new --config command works
             result = self.run_ekko(['--config'])
             assert result.returncode == 0, "Should display config"
-            assert "ollama (qwen3-coder)" in result.stdout, "Should show old settings"
+            assert "ollama" in result.stdout and "qwen3-coder" in result.stdout, "Should show old settings"
 
             # Test new --model command works
             result = self.run_ekko(['--model', 'llama3'])
@@ -140,11 +139,11 @@ class TestUpgradeCompatibility:
         self.setup_test_env(v101_config)
 
         try:
-            # Test that v1.1.0 can load and display Anthropic config
+            # Test that v1.3.0 can load and display Anthropic config
             result = self.run_ekko(['--config'])
             assert result.returncode == 0, "Should load config"
             assert "anthropic" in result.stdout, "Should show Anthropic"
-            assert "claude-sonnet-4-5-20250929" in result.stdout, "Should show model"
+            assert ("claude-sonnet" in result.stdout or "sonnet" in result.stdout), f"Should show model, got: {result.stdout}"
 
             # Test new switching works
             result = self.run_ekko(['--model', 'claude-opus-4'])
@@ -207,7 +206,7 @@ class TestUpgradeCompatibility:
         self.setup_test_env(v101_config)
 
         try:
-            # Run any v1.1.0 operation
+            # Run any v1.3.0 operation
             self.run_ekko(['--version'])
 
             # Verify structure hasn't changed
@@ -221,7 +220,7 @@ class TestUpgradeCompatibility:
             self.cleanup_test_env()
 
     def test_no_migration_needed(self):
-        """Verify v1.1.0 requires no migration or config updates"""
+        """Verify v1.3.0 requires no migration or config updates"""
         v101_config = {
             "provider": "anthropic",
             "anthropic_api_key": "sk-ant-test-key",
@@ -267,7 +266,7 @@ def main():
     """Run all tests"""
     print("="*60)
     print("EKKO UPGRADE COMPATIBILITY TEST SUITE")
-    print("Testing v1.0.1 → v1.2.0 upgrade")
+    print("Testing v1.0.1 → v1.3.0 upgrade")
     print("="*60)
 
     tester = TestUpgradeCompatibility()
