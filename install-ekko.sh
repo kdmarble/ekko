@@ -60,11 +60,21 @@ mkdir -p "$CONFIG_DIR"
 # Install ekko using pipx
 echo -e "${BLUE}ℹ${NC}  Installing ekko..."
 
+# Get the latest release version
+LATEST_VERSION=$(curl -fsSL https://api.github.com/repos/kdmarble/ekko/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+
+if [ -z "$LATEST_VERSION" ]; then
+    echo -e "${RED}Error: Could not determine latest version${NC}"
+    exit 1
+fi
+
+WHEEL_URL="https://github.com/kdmarble/ekko/releases/download/${LATEST_VERSION}/ekko-${LATEST_VERSION#v}-py3-none-any.whl"
+
 if pipx list | grep -q "ekko"; then
     echo -e "${YELLOW}⚠${NC}  ekko is already installed, upgrading..."
-    pipx upgrade ekko || pipx install --force git+${REPO_URL}.git
+    pipx upgrade ekko || pipx install --force "$WHEEL_URL"
 else
-    pipx install git+${REPO_URL}.git
+    pipx install "$WHEEL_URL"
 fi
 
 echo -e "${GREEN}✓${NC} ekko installed"
