@@ -49,7 +49,9 @@ class AnthropicProvider(LLMProvider):
             result = response.json()
             return result["content"][0]["text"]
         except requests.exceptions.RequestException as e:
-            error_msg = f"Error connecting to Anthropic API: {str(e)}\n"
+            # Don't log the full exception as it may contain sensitive request details
+            error_type = type(e).__name__
+            error_msg = f"Error connecting to Anthropic API: {error_type}\n"
             error_msg += "Possible fixes:\n"
             error_msg += "  - Check your API key is valid\n"
             error_msg += "  - Verify your internet connection\n"
