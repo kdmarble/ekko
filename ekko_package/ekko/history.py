@@ -112,7 +112,7 @@ class ShellHistory:
             # Ensure history file has secure permissions
             self.histfile.chmod(0o600)
             return True
-        except (OSError, IOError, PermissionError):
+        except (OSError, PermissionError):
             # Silently fail - shell history is not critical
             return False
 
@@ -143,7 +143,7 @@ class ShellHistory:
             # Ensure history file has secure permissions
             self.histfile.chmod(0o600)
             return True
-        except (OSError, IOError, PermissionError):
+        except (OSError, PermissionError):
             # Silently fail - shell history is not critical
             return False
 
@@ -175,7 +175,7 @@ class ShellHistory:
             # Ensure history file has secure permissions
             self.histfile.chmod(0o600)
             return True
-        except (OSError, IOError, PermissionError):
+        except (OSError, PermissionError):
             # Silently fail - shell history is not critical
             return False
 
@@ -203,7 +203,7 @@ class ShellHistory:
             # Ensure history file has secure permissions
             self.histfile.chmod(0o600)
             return True
-        except (OSError, IOError, PermissionError):
+        except (OSError, PermissionError):
             # Silently fail - shell history is not critical
             return False
 

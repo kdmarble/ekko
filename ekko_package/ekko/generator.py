@@ -3,7 +3,6 @@ Command generation logic for ekko
 """
 
 import re
-import shlex
 import subprocess  # nosec B404 - subprocess needed for command execution
 import sys
 
@@ -94,7 +93,7 @@ class CommandGenerator:
                 if len(argv) > 1:
                     cmd_parts.extend(argv[1:])
                 return " ".join(cmd_parts)
-        except (IndexError, AttributeError, TypeError) as e:
+        except (IndexError, AttributeError, TypeError):
             # Fallback if argv is not accessible or malformed
             # This is not critical - just return default
             return "ekko"
@@ -136,7 +135,7 @@ class CommandGenerator:
         # Check for extremely dangerous patterns
         for pattern in DANGEROUS_PATTERNS:
             if re.search(pattern, cmd, re.IGNORECASE):
-                return False, f"Potentially dangerous command detected. Please review carefully."
+                return False, "Potentially dangerous command detected. Please review carefully."
 
         # Check command length (extremely long commands might be suspicious)
         if len(cmd) > 10000:
