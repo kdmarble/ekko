@@ -92,9 +92,7 @@ class Config:
             return False
         # Check for reasonable length and no suspicious content
         suspicious_patterns = ["#", "\n", "echo", "$", "&&"]
-        return len(api_key) > 10 and not any(
-            pattern in api_key for pattern in suspicious_patterns
-        )
+        return len(api_key) > 10 and not any(pattern in api_key for pattern in suspicious_patterns)
 
     def load_config(self) -> Dict[str, Any]:
         """
@@ -110,9 +108,7 @@ class Config:
 
                 # Validate the loaded config
                 if not self._validate_config(config):
-                    print(
-                        "⚠ Warning: Configuration file appears to be corrupted or invalid."
-                    )
+                    print("⚠ Warning: Configuration file appears to be corrupted or invalid.")
                     print(f"   Config file: {self.config_file}")
                     print("   Please run 'ekko --setup' to reconfigure.\n")
                     sys.exit(1)
@@ -203,9 +199,7 @@ class Config:
                     self.config["anthropic_api_key"] = api_key
                     break
                 else:
-                    print(
-                        "⚠ Invalid API key format. Please enter a valid Anthropic API key."
-                    )
+                    print("⚠ Invalid API key format. Please enter a valid Anthropic API key.")
 
             # Get model name (with validation)
             model = self._get_input(f"Model [{self.config['anthropic_model']}]: ")
@@ -213,9 +207,7 @@ class Config:
                 if self._validate_model_name(model):
                     self.config["anthropic_model"] = model
                 else:
-                    print(
-                        f"⚠ Invalid model name, using default: {self.config['anthropic_model']}"
-                    )
+                    print(f"⚠ Invalid model name, using default: {self.config['anthropic_model']}")
         else:
             self.config["provider"] = "ollama"
 
@@ -239,9 +231,7 @@ class Config:
                 if self._validate_model_name(model):
                     self.config["ollama_model"] = model
                 else:
-                    print(
-                        f"⚠ Invalid model name, using default: {self.config['ollama_model']}"
-                    )
+                    print(f"⚠ Invalid model name, using default: {self.config['ollama_model']}")
 
         self.save_config()
         print(f"\n✓ Configuration saved to {self.config_file}")
@@ -315,7 +305,7 @@ class Config:
             title="🔧 ekko Configuration",
             show_header=True,
             header_style="bold cyan",
-            border_style="dim"
+            border_style="dim",
         )
 
         table.add_column("Provider", style="cyan", width=12)
@@ -331,12 +321,8 @@ class Config:
             api_key = self.config.get("anthropic_api_key", "")
             anthropic_model = self.config.get("anthropic_model", "")
             if api_key and self._validate_api_key(api_key):
-                masked_key = (
-                    "sk-ant-..." + api_key[-4:] if len(api_key) > 4 else "***"
-                )
-                table.add_row(
-                    "anthropic", "○ Available", anthropic_model, f"Key: {masked_key}"
-                )
+                masked_key = "sk-ant-..." + api_key[-4:] if len(api_key) > 4 else "***"
+                table.add_row("anthropic", "○ Available", anthropic_model, f"Key: {masked_key}")
             else:
                 table.add_row(
                     "anthropic",
@@ -354,13 +340,9 @@ class Config:
             ollama_url = self.config.get("ollama_url", "")
             ollama_model = self.config.get("ollama_model", "")
             if ollama_url and self._validate_url(ollama_url):
-                table.add_row(
-                    "ollama", "○ Available", ollama_model, f"URL: {ollama_url}"
-                )
+                table.add_row("ollama", "○ Available", ollama_model, f"URL: {ollama_url}")
             else:
-                table.add_row(
-                    "ollama", "[red]Not configured[/red]", "-", "Run: ekko --setup"
-                )
+                table.add_row("ollama", "[red]Not configured[/red]", "-", "Run: ekko --setup")
 
         console.print(table)
         console.print()

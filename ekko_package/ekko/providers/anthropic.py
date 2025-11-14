@@ -42,9 +42,7 @@ class AnthropicProvider(LLMProvider):
         }
 
         try:
-            response = requests.post(
-                self.api_url, headers=headers, json=data, timeout=30
-            )
+            response = requests.post(self.api_url, headers=headers, json=data, timeout=30)
             response.raise_for_status()
             result = response.json()
             return result["content"][0]["text"]

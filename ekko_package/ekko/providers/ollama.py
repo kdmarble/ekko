@@ -45,9 +45,7 @@ class OllamaProvider(LLMProvider):
             error_msg = f"Error connecting to Ollama: {str(e)}\n"
             error_msg += "Possible fixes:\n"
             error_msg += f"  - Check Ollama is running at {self.url}\n"
-            error_msg += (
-                f"  - Verify the model '{self.model}' is installed: ollama list\n"
-            )
+            error_msg += f"  - Verify the model '{self.model}' is installed: ollama list\n"
             error_msg += "  - Check the Ollama URL is correct\n"
             error_msg += "  - Run 'ekko --setup' to reconfigure\n"
             print(error_msg)

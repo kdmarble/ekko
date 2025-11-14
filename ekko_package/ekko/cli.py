@@ -59,18 +59,12 @@ def callback(
     prompt: Optional[List[str]] = typer.Argument(
         None, help="Natural language prompt for command generation"
     ),
-    setup: bool = typer.Option(
-        False, "--setup", help="Run configuration wizard"
-    ),
-    config_show: bool = typer.Option(
-        False, "--config", help="Show current configuration"
-    ),
+    setup: bool = typer.Option(False, "--setup", help="Run configuration wizard"),
+    config_show: bool = typer.Option(False, "--config", help="Show current configuration"),
     switch: Optional[str] = typer.Option(
         None, "--switch", help="Switch AI provider (ollama/anthropic)"
     ),
-    model: Optional[str] = typer.Option(
-        None, "--model", help="Change model for current provider"
-    ),
+    model: Optional[str] = typer.Option(None, "--model", help="Change model for current provider"),
     use: Optional[str] = typer.Option(
         None, "--use", help="Switch provider and model (format: provider:model)"
     ),
@@ -126,10 +120,7 @@ def callback(
         return
 
     # Check if configured
-    if (
-        not config.config.get("anthropic_api_key")
-        and config.config["provider"] == "anthropic"
-    ):
+    if not config.config.get("anthropic_api_key") and config.config["provider"] == "anthropic":
         typer.echo("Not configured. Run: ekko --setup")
         return
 

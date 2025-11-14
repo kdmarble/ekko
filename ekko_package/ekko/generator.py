@@ -44,9 +44,7 @@ class CommandGenerator:
                 import sys
 
                 sys.exit(1)
-            return get_provider(
-                "anthropic", api_key=api_key, model=self.config["anthropic_model"]
-            )
+            return get_provider("anthropic", api_key=api_key, model=self.config["anthropic_model"])
 
         elif provider_type == "ollama":
             return get_provider(
