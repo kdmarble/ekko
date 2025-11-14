@@ -211,7 +211,7 @@ class Config:
                     self.config["anthropic_model"] = model
                 else:
                     # Use local variable to avoid logging from sensitive config dict
-                    print(f"⚠ Invalid model name, using default: {default_model}")
+                    print("⚠ Invalid model name, using default model.")
         else:
             self.config["provider"] = "ollama"
 
