@@ -23,6 +23,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: 'ekko_package/pyproject.toml'
 
       - name: Set version variables
         id: version
@@ -42,15 +44,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install build twine
 
-      - name: Install ekko package for testing
+      # Quick smoke test only - full tests already passed in CI
+      - name: Verify package can be imported
         run: |
-          pip install -e ekko_package[dev]
-
-      - name: Run tests
-        run: |
+          pip install -e ekko_package
+          python3 -c "import ekko; print(f'ekko version: {ekko.__version__}')"
           python3 -m ekko.cli --help
           python3 -m ekko.cli --version
-          pytest tests/ -v --tb=short --disable-warnings
 
       - name: Build package distribution
         run: |
