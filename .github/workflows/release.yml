@@ -20,6 +20,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for setuptools_scm to access git tags
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -40,6 +42,21 @@ jobs:
           fi
           echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
           echo "TAG_NAME=${TAG_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Create tag for workflow_dispatch
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          TAG_NAME="${{ steps.version.outputs.TAG_NAME }}"
+          # Check if tag exists
+          if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+            echo "Tag $TAG_NAME already exists"
+            git checkout "$TAG_NAME"
+          else
+            echo "Creating tag $TAG_NAME"
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git tag -a "$TAG_NAME" -m "Release $TAG_NAME"
+          fi
 
       - name: Install dependencies
         run: |
@@ -101,6 +118,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for accessing git tags and history
 
       - name: Set version variables
         id: version
@@ -157,6 +176,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for accessing git tags and history
 
       - name: Set version variables
         id: version
