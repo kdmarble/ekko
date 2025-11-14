@@ -2,13 +2,15 @@
 Configuration management for ekko
 """
 
+import json
 import os
 import sys
-import json
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any
+
 from rich.console import Console
 from rich.table import Table
+
 from ekko.providers import PROVIDERS
 
 console = Console()
@@ -35,11 +37,11 @@ class Config:
         """
         try:
             # Open TTY directly to avoid reading from piped stdin
-            with open("/dev/tty", "r") as tty:
+            with open("/dev/tty") as tty:
                 # Print to stdout so user sees the prompt
                 print(prompt, end="", flush=True)
                 return tty.readline().strip()
-        except (IOError, OSError, FileNotFoundError):
+        except (OSError, FileNotFoundError):
             # Fall back to regular input if TTY is not available
             return input(prompt).strip()
 
@@ -94,7 +96,7 @@ class Config:
         suspicious_patterns = ["#", "\n", "echo", "$", "&&"]
         return len(api_key) > 10 and not any(pattern in api_key for pattern in suspicious_patterns)
 
-    def load_config(self) -> Dict[str, Any]:
+    def load_config(self) -> dict[str, Any]:
         """
         Load configuration from file.
 
@@ -103,7 +105,7 @@ class Config:
         """
         if self.config_file.exists():
             try:
-                with open(self.config_file, "r") as f:
+                with open(self.config_file) as f:
                     config = json.load(f)
 
                 # Validate the loaded config
@@ -121,7 +123,7 @@ class Config:
                 sys.exit(1)
         return self.default_config()
 
-    def _validate_config(self, config: Dict[str, Any]) -> bool:
+    def _validate_config(self, config: dict[str, Any]) -> bool:
         """
         Validate configuration structure and content.
 
@@ -157,7 +159,7 @@ class Config:
 
         return True
 
-    def default_config(self) -> Dict[str, Any]:
+    def default_config(self) -> dict[str, Any]:
         """
         Return default configuration.
 

@@ -5,9 +5,11 @@ Command generation logic for ekko
 import re
 import subprocess
 import sys
+
 from rich.console import Console
-from ekko.providers import get_provider
+
 from ekko.history import log_to_history
+from ekko.providers import get_provider
 
 console = Console()
 

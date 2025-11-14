@@ -2,8 +2,10 @@
 Command-line interface for ekko
 """
 
-from typing import Optional, List
+from typing import Optional
+
 import typer
+
 from ekko import __version__
 from ekko.config import Config
 from ekko.generator import CommandGenerator
@@ -56,7 +58,7 @@ Configuration: ~/.config/ekko/config.json""")
 
 @app.callback(invoke_without_command=True)
 def callback(
-    prompt: Optional[List[str]] = typer.Argument(
+    prompt: Optional[list[str]] = typer.Argument(
         None, help="Natural language prompt for command generation"
     ),
     setup: bool = typer.Option(False, "--setup", help="Run configuration wizard"),

@@ -3,7 +3,9 @@ Ollama local provider integration
 """
 
 import sys
+
 import requests
+
 from ekko.providers.base import LLMProvider
 
 
