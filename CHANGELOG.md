@@ -5,6 +5,38 @@ All notable changes to ekko will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2025-11-14
+
+### Security
+- **Fixed all 6 security scanning alerts** identified by CodeQL analysis
+  - Addressed command injection vulnerabilities
+  - Fixed path traversal issues
+  - Improved input validation and sanitization
+  - Enhanced security posture across the codebase
+
+### Improved
+- **CI/CD pipeline optimization** to eliminate redundant workflow runs
+  - Streamlined workflow triggers to prevent duplicate executions
+  - Reduced unnecessary compute time and improved efficiency
+  - Better conditional logic for when workflows should run
+- **Release automation enhancements**
+  - Fixed GitHub release action to use correct `body_path` parameter
+  - Added `workflow_dispatch` support for manual release triggering
+  - Improved release workflow reliability and flexibility
+
+### Tests
+- **Complete test suite refactoring** with migration to pytest
+  - Migrated from unittest to pytest framework
+  - Eliminated version brittleness in test expectations
+  - Added proper pytest configuration and fixtures
+  - Fixed CI/CD to install pytest and use proper test runner
+  - Improved test reliability and maintainability
+
+### Development
+- Enhanced CI/CD workflow stability and reliability
+- Better test infrastructure for future development
+- Improved security practices and code quality
+
 ## [1.4.0] - 2025-11-14
 
 ### Added
