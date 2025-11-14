@@ -66,7 +66,8 @@ class CommandGenerator:
                 return get_provider("ollama", url=url, model=model_name)
 
             else:
-                print(f"Error: Unknown provider '{provider_type}'")
+                print("Error: Unknown provider configured")
+                print("Run: ekko --setup to reconfigure")
                 sys.exit(1)
 
         except Exception as e:

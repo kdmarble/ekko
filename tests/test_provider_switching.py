@@ -27,7 +27,7 @@ class TestProviderSwitching:
         result = ekko_runner(['--switch', 'anthropic'])
 
         assert result.returncode == 0, "Should exit successfully"
-        assert "Switched to anthropic" in result.stdout, "Should confirm switch"
+        assert "Provider switched successfully" in result.stdout, "Should confirm switch"
 
         # Verify config was updated
         config = read_config()
@@ -74,7 +74,7 @@ class TestProviderSwitching:
         result = ekko_runner(['--model', 'llama3'])
 
         assert result.returncode == 0, "Should exit successfully"
-        assert "Changed ollama model" in result.stdout, "Should confirm change"
+        assert "Model changed successfully" in result.stdout, "Should confirm change"
 
         # Verify config was updated
         config = read_config()
@@ -96,8 +96,8 @@ class TestProviderSwitching:
         result = ekko_runner(['--use', 'anthropic:claude-opus-4'])
 
         assert result.returncode == 0, "Should exit successfully"
-        assert "Switched to anthropic" in result.stdout, "Should show provider switch"
-        assert "Changed anthropic model" in result.stdout, "Should show model change"
+        assert "Provider switched successfully" in result.stdout, "Should show provider switch"
+        assert "Model changed successfully" in result.stdout, "Should show model change"
 
         # Verify config was updated
         config = read_config()
@@ -110,7 +110,7 @@ class TestProviderSwitching:
         result = ekko_runner(['--use', 'anthropic'])
 
         assert result.returncode == 0, "Should exit successfully"
-        assert "Switched to anthropic" in result.stdout, "Should show provider switch"
+        assert "Provider switched successfully" in result.stdout, "Should show provider switch"
 
         # Verify config was updated
         config = read_config()
@@ -130,7 +130,7 @@ class TestProviderSwitching:
         result = ekko_runner(['--switch', 'ollama'])
 
         # Verify switch was successful
-        assert "Switched to ollama" in result.stdout, "Should confirm switch"
+        assert "Provider switched successfully" in result.stdout, "Should confirm switch"
 
         config = read_config()
         assert config['ollama_model'] == 'llama3', "Ollama model should persist"

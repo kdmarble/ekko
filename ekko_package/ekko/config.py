@@ -281,7 +281,7 @@ class Config:
         self.save_config()
 
         # Show confirmation (avoid logging sensitive config details)
-        print(f"✓ Switched to {provider_name}")
+        print("✓ Provider switched successfully")
 
     def switch_model(self, model_name: str):
         """
@@ -303,8 +303,8 @@ class Config:
         self.config[model_key] = model_name
         self.save_config()
 
-        # Avoid logging potentially sensitive model name
-        print(f"✓ Changed {provider} model")
+        # Avoid logging potentially sensitive model or provider names
+        print("✓ Model changed successfully")
 
     def show_config(self):
         """Display current configuration with masked sensitive data."""
