@@ -1,4 +1,6 @@
 name: CI
+permissions:
+  contents: read
 
 on:
   push:
@@ -8,6 +10,39 @@ on:
   workflow_dispatch:
 
 jobs:
+  test:
+    name: Test on ${{ matrix.os }} - Python ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python: ['3.9', '3.10', '3.11', '3.12']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ekko_package[dev]
+
+      - name: Run tests with pytest
+        run: |
+          cd ekko_package
+          pytest ../tests/ -v --tb=short --disable-warnings
+
+      - name: Test CLI integration
+        run: |
+          ekko --help
+          ekko --version
+
   lint:
     name: Lint Code
     runs-on: ubuntu-latest
@@ -20,98 +55,21 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install black flake8
+      - name: Install ruff
+        run: pip install ruff
 
-      - name: Check formatting with black
-        run: black --check ekko_package/ekko/*.py ekko_package/ekko/providers/*.py || echo "⚠️ Black formatting suggestions found (non-blocking)"
-        continue-on-error: true
+      - name: Check formatting with ruff
+        run: ruff format --check ekko_package/ekko/*.py ekko_package/ekko/providers/*.py
 
-      - name: Lint with flake8
-        run: flake8 ekko_package/ekko/*.py ekko_package/ekko/providers/*.py --max-line-length=100 --ignore=E501,W503
-
-  test:
-    name: Test on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-        python-version: ['3.9', '3.10', '3.11', '3.12']
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests pexpect typer
-
-      - name: Install ekko package
-        run: |
-          cd ekko_package
-          pip install -e .
-
-      - name: Run basic tests
-        run: |
-          python3 -m ekko.cli --help
-          python3 -m ekko.cli --version
-
-      - name: Run setup wizard tests
-        run: python3 tests/test_setup_wizard.py
-
-      - name: Run provider switching tests
-        run: python3 tests/test_provider_switching.py
-
-      - name: Run upgrade compatibility tests
-        run: python3 tests/test_upgrade_compatibility.py
-
-      - name: Run installation tests (disabled)
-        run: python3 tests/test_piped_installation.py
-
-  integration:
-    name: Integration Tests
-    runs-on: ubuntu-latest
-    needs: [lint, test]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
-        run: pip install requests typer
-
-      - name: Install ekko package
-        run: |
-          cd ekko_package
-          pip install .
-
-      - name: Test CLI commands
-        run: |
-          ekko --help
-          ekko --version
-
-      - name: Test package build
-        run: |
-          pip install build
-          cd ekko_package
-          python3 -m build
+      - name: Lint with ruff
+        run: ruff check ekko_package/ekko/*.py ekko_package/ekko/providers/*.py
 
   security:
     name: Security Scan
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

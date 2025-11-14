@@ -3,7 +3,9 @@ Ollama local provider integration
 """
 
 import sys
+
 import requests
+
 from ekko.providers.base import LLMProvider
 
 
@@ -42,12 +44,12 @@ class OllamaProvider(LLMProvider):
             result = response.json()
             return result["response"]
         except requests.exceptions.RequestException as e:
-            error_msg = f"Error connecting to Ollama: {str(e)}\n"
+            # Don't log the full exception as it may contain sensitive request details
+            error_type = type(e).__name__
+            error_msg = f"Error connecting to Ollama: {error_type}\n"
             error_msg += "Possible fixes:\n"
             error_msg += f"  - Check Ollama is running at {self.url}\n"
-            error_msg += (
-                f"  - Verify the model '{self.model}' is installed: ollama list\n"
-            )
+            error_msg += f"  - Verify the model '{self.model}' is installed: ollama list\n"
             error_msg += "  - Check the Ollama URL is correct\n"
             error_msg += "  - Run 'ekko --setup' to reconfigure\n"
             print(error_msg)

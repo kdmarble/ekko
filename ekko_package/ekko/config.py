@@ -2,13 +2,15 @@
 Configuration management for ekko
 """
 
+import json
 import os
 import sys
-import json
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any
+
 from rich.console import Console
 from rich.table import Table
+
 from ekko.providers import PROVIDERS
 
 console = Console()
@@ -35,11 +37,11 @@ class Config:
         """
         try:
             # Open TTY directly to avoid reading from piped stdin
-            with open("/dev/tty", "r") as tty:
+            with open("/dev/tty") as tty:
                 # Print to stdout so user sees the prompt
                 print(prompt, end="", flush=True)
                 return tty.readline().strip()
-        except (IOError, OSError, FileNotFoundError):
+        except (OSError, FileNotFoundError):
             # Fall back to regular input if TTY is not available
             return input(prompt).strip()
 
@@ -92,11 +94,9 @@ class Config:
             return False
         # Check for reasonable length and no suspicious content
         suspicious_patterns = ["#", "\n", "echo", "$", "&&"]
-        return len(api_key) > 10 and not any(
-            pattern in api_key for pattern in suspicious_patterns
-        )
+        return len(api_key) > 10 and not any(pattern in api_key for pattern in suspicious_patterns)
 
-    def load_config(self) -> Dict[str, Any]:
+    def load_config(self) -> dict[str, Any]:
         """
         Load configuration from file.
 
@@ -105,14 +105,12 @@ class Config:
         """
         if self.config_file.exists():
             try:
-                with open(self.config_file, "r") as f:
+                with open(self.config_file) as f:
                     config = json.load(f)
 
                 # Validate the loaded config
                 if not self._validate_config(config):
-                    print(
-                        "⚠ Warning: Configuration file appears to be corrupted or invalid."
-                    )
+                    print("⚠ Warning: Configuration file appears to be corrupted or invalid.")
                     print(f"   Config file: {self.config_file}")
                     print("   Please run 'ekko --setup' to reconfigure.\n")
                     sys.exit(1)
@@ -125,7 +123,7 @@ class Config:
                 sys.exit(1)
         return self.default_config()
 
-    def _validate_config(self, config: Dict[str, Any]) -> bool:
+    def _validate_config(self, config: dict[str, Any]) -> bool:
         """
         Validate configuration structure and content.
 
@@ -161,7 +159,7 @@ class Config:
 
         return True
 
-    def default_config(self) -> Dict[str, Any]:
+    def default_config(self) -> dict[str, Any]:
         """
         Return default configuration.
 
@@ -203,25 +201,24 @@ class Config:
                     self.config["anthropic_api_key"] = api_key
                     break
                 else:
-                    print(
-                        "⚠ Invalid API key format. Please enter a valid Anthropic API key."
-                    )
+                    print("⚠ Invalid API key format. Please enter a valid Anthropic API key.")
 
             # Get model name (with validation)
-            model = self._get_input(f"Model [{self.config['anthropic_model']}]: ")
+            default_model = self.config["anthropic_model"]
+            model = self._get_input(f"Model [{default_model}]: ")
             if model:
                 if self._validate_model_name(model):
                     self.config["anthropic_model"] = model
                 else:
-                    print(
-                        f"⚠ Invalid model name, using default: {self.config['anthropic_model']}"
-                    )
+                    # Use local variable to avoid logging from sensitive config dict
+                    print("⚠ Invalid model name, using default model.")
         else:
             self.config["provider"] = "ollama"
 
             # Get and validate Ollama URL
+            default_url = self.config["ollama_url"]
             while True:
-                url = self._get_input(f"Ollama URL [{self.config['ollama_url']}]: ")
+                url = self._get_input(f"Ollama URL [{default_url}]: ")
                 if not url:
                     # User pressed enter, use default
                     break
@@ -234,14 +231,14 @@ class Config:
                     )
 
             # Get and validate model name
-            model = self._get_input(f"Model [{self.config['ollama_model']}]: ")
+            default_model = self.config["ollama_model"]
+            model = self._get_input(f"Model [{default_model}]: ")
             if model:
                 if self._validate_model_name(model):
                     self.config["ollama_model"] = model
                 else:
-                    print(
-                        f"⚠ Invalid model name, using default: {self.config['ollama_model']}"
-                    )
+                    # Use local variable to avoid logging from sensitive config dict
+                    print("⚠ Invalid model name, using default model.")
 
         self.save_config()
         print(f"\n✓ Configuration saved to {self.config_file}")
@@ -315,7 +312,7 @@ class Config:
             title="🔧 ekko Configuration",
             show_header=True,
             header_style="bold cyan",
-            border_style="dim"
+            border_style="dim",
         )
 
         table.add_column("Provider", style="cyan", width=12)
@@ -331,12 +328,8 @@ class Config:
             api_key = self.config.get("anthropic_api_key", "")
             anthropic_model = self.config.get("anthropic_model", "")
             if api_key and self._validate_api_key(api_key):
-                masked_key = (
-                    "sk-ant-..." + api_key[-4:] if len(api_key) > 4 else "***"
-                )
-                table.add_row(
-                    "anthropic", "○ Available", anthropic_model, f"Key: {masked_key}"
-                )
+                masked_key = "sk-ant-..." + api_key[-4:] if len(api_key) > 4 else "***"
+                table.add_row("anthropic", "○ Available", anthropic_model, f"Key: {masked_key}")
             else:
                 table.add_row(
                     "anthropic",
@@ -354,13 +347,9 @@ class Config:
             ollama_url = self.config.get("ollama_url", "")
             ollama_model = self.config.get("ollama_model", "")
             if ollama_url and self._validate_url(ollama_url):
-                table.add_row(
-                    "ollama", "○ Available", ollama_model, f"URL: {ollama_url}"
-                )
+                table.add_row("ollama", "○ Available", ollama_model, f"URL: {ollama_url}")
             else:
-                table.add_row(
-                    "ollama", "[red]Not configured[/red]", "-", "Run: ekko --setup"
-                )
+                table.add_row("ollama", "[red]Not configured[/red]", "-", "Run: ekko --setup")
 
         console.print(table)
         console.print()
