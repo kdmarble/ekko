@@ -211,7 +211,8 @@ class Config:
                     print("⚠ Invalid API key format. Please enter a valid Anthropic API key.")
 
             # Get model name (with validation)
-            default_model = self.config["anthropic_model"]
+            # Use hardcoded default to avoid taint from config dict
+            default_model = "claude-sonnet-4-5-20250929"
             model = self._get_input(f"Model [{default_model}]: ")
             if model:
                 if self._validate_model_name(model):
@@ -223,7 +224,8 @@ class Config:
             self.config["provider"] = "ollama"
 
             # Get and validate Ollama URL
-            default_url = self.config["ollama_url"]
+            # Use hardcoded default to avoid taint from config dict
+            default_url = "http://localhost:11434"
             while True:
                 url = self._get_input(f"Ollama URL [{default_url}]: ")
                 if not url:
@@ -238,7 +240,8 @@ class Config:
                     )
 
             # Get and validate model name
-            default_model = self.config["ollama_model"]
+            # Use hardcoded default to avoid taint from config dict
+            default_model = "qwen3-coder"
             model = self._get_input(f"Model [{default_model}]: ")
             if model:
                 if self._validate_model_name(model):
