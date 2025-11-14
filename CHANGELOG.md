@@ -5,6 +5,29 @@ All notable changes to ekko will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2025-11-14
+
+### Added
+- **Shell history logging** for executed commands
+  - Automatically logs both the `ekko` command and generated command to shell history
+  - Supports multiple shell environments: bash, zsh, and fish
+  - Respects `$HISTFILE` environment variable for custom history locations
+  - Uses shell-specific history formats:
+    - Bash: Simple line-by-line format
+    - Zsh: Extended history with timestamps
+    - Fish: YAML-like format with metadata
+  - Enables searching and recalling past ekko queries with Ctrl+R or arrow keys
+  - Commands appear in history exactly as if typed manually
+
+### Improved
+- Command execution now integrates seamlessly with shell history
+- Users can easily re-run previously generated commands from history
+- Better workflow integration with native shell features
+
+### Tests
+- Added comprehensive test suite for shell history functionality
+- Tests cover all supported shell formats and edge cases
+
 ## [1.3.0] - 2025-11-05
 
 ### Added
