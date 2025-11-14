@@ -36,12 +36,13 @@ class Config:
             User input as string
         """
         try:
-            # Open TTY directly to avoid reading from piped stdin
-            with open("/dev/tty") as tty:
-                # Print to stdout so user sees the prompt
-                print(prompt, end="", flush=True)
+            # Open TTY for reading and writing to avoid piped stdin and logging
+            with open("/dev/tty", "r+") as tty:
+                # Write prompt directly to TTY (not to stdout which might be logged)
+                tty.write(prompt)
+                tty.flush()
                 return tty.readline().strip()
-        except (OSError, FileNotFoundError):
+        except (OSError, FileNotFoundError, AttributeError):
             # Fall back to regular input if TTY is not available
             return input(prompt).strip()
 
@@ -176,10 +177,16 @@ class Config:
         }
 
     def save_config(self):
-        """Save configuration to file."""
+        """Save configuration to file with secure permissions."""
         self.config_dir.mkdir(parents=True, exist_ok=True)
+        # Set restrictive permissions on config directory
+        self.config_dir.chmod(0o700)  # Only owner can read/write/execute
+
         with open(self.config_file, "w") as f:
             json.dump(self.config, f, indent=2)
+
+        # Set restrictive permissions on config file (contains API keys)
+        self.config_file.chmod(0o600)  # Only owner can read/write
 
     def setup_wizard(self):
         """Run interactive setup wizard."""
@@ -273,9 +280,8 @@ class Config:
         self.config["provider"] = provider_name
         self.save_config()
 
-        # Show confirmation
-        model = self.config.get(f"{provider_name}_model", "")
-        print(f"✓ Switched to {provider_name} ({model})")
+        # Show confirmation (avoid logging sensitive config details)
+        print(f"✓ Switched to {provider_name}")
 
     def switch_model(self, model_name: str):
         """
@@ -297,7 +303,8 @@ class Config:
         self.config[model_key] = model_name
         self.save_config()
 
-        print(f"✓ Changed {provider} model to {model_name}")
+        # Avoid logging potentially sensitive model name
+        print(f"✓ Changed {provider} model")
 
     def show_config(self):
         """Display current configuration with masked sensitive data."""

@@ -108,8 +108,12 @@ class ShellHistory:
             # Append to history file
             with open(self.histfile, "a") as f:
                 f.write(f"{command}\n")
+
+            # Ensure history file has secure permissions
+            self.histfile.chmod(0o600)
             return True
-        except Exception:
+        except (OSError, IOError, PermissionError):
+            # Silently fail - shell history is not critical
             return False
 
     def _add_zsh_history(self, command: str) -> bool:
@@ -135,8 +139,12 @@ class ShellHistory:
             timestamp = int(time.time())
             with open(self.histfile, "a") as f:
                 f.write(f": {timestamp}:0;{command}\n")
+
+            # Ensure history file has secure permissions
+            self.histfile.chmod(0o600)
             return True
-        except Exception:
+        except (OSError, IOError, PermissionError):
+            # Silently fail - shell history is not critical
             return False
 
     def _add_fish_history(self, command: str) -> bool:
@@ -163,8 +171,12 @@ class ShellHistory:
             with open(self.histfile, "a") as f:
                 f.write(f"- cmd: {command}\n")
                 f.write(f"  when: {timestamp}\n")
+
+            # Ensure history file has secure permissions
+            self.histfile.chmod(0o600)
             return True
-        except Exception:
+        except (OSError, IOError, PermissionError):
+            # Silently fail - shell history is not critical
             return False
 
     def _add_generic_history(self, command: str) -> bool:
@@ -187,8 +199,12 @@ class ShellHistory:
             # Simple append
             with open(self.histfile, "a") as f:
                 f.write(f"{command}\n")
+
+            # Ensure history file has secure permissions
+            self.histfile.chmod(0o600)
             return True
-        except Exception:
+        except (OSError, IOError, PermissionError):
+            # Silently fail - shell history is not critical
             return False
 
 
