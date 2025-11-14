@@ -84,8 +84,8 @@ select = ["E", "F", "W", "I", "N", "UP"]
 ignore = ["E501"]  # E501: line too long (handled by line-length setting)
 
 [tool.setuptools_scm]
-root = ".."
-write_to = "ekko_package/ekko/_version.py"
+search_parent_directories = true
+write_to = "ekko/_version.py"
 version_scheme = "guess-next-dev"
 local_scheme = "no-local-version"
 fallback_version = "0.0.0"
