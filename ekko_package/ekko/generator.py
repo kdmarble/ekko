@@ -16,12 +16,12 @@ console = Console()
 
 # Dangerous command patterns that should trigger warnings
 DANGEROUS_PATTERNS = [
-    r'\brm\s+-rf\s+/',  # rm -rf /
-    r'\bdd\s+if=/dev/(?:zero|random)\s+of=/dev/(?:sda|hda)',  # Disk wiping
-    r':\(\)\{.*:\|:.*\};:',  # Fork bomb
-    r'\bchmod\s+-R\s+777\s+/',  # Dangerous chmod
-    r'\bmkfs\.',  # Filesystem formatting
-    r'\b(?:wget|curl).*\|\s*(?:bash|sh)',  # Pipe to shell
+    r"\brm\s+-rf\s+/",  # rm -rf /
+    r"\bdd\s+if=/dev/(?:zero|random)\s+of=/dev/(?:sda|hda)",  # Disk wiping
+    r":\(\)\{.*:\|:.*\};:",  # Fork bomb
+    r"\bchmod\s+-R\s+777\s+/",  # Dangerous chmod
+    r"\bmkfs\.",  # Filesystem formatting
+    r"\b(?:wget|curl).*\|\s*(?:bash|sh)",  # Pipe to shell
 ]
 
 
