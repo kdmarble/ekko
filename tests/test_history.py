@@ -5,6 +5,7 @@ Tests for shell history functionality.
 import os
 import tempfile
 from pathlib import Path
+from unittest.mock import patch, MagicMock
 from ekko.history import ShellHistory
 
 
@@ -86,6 +87,81 @@ def test_empty_command():
 
     result = history.add_to_history("   ")
     assert result is False
+
+
+def test_atuin_detection():
+    """Test Atuin detection."""
+    with patch("shutil.which") as mock_which:
+        # Test when Atuin is available
+        mock_which.return_value = "/usr/bin/atuin"
+        history = ShellHistory()
+        assert history.has_atuin is True
+
+        # Test when Atuin is not available
+        mock_which.return_value = None
+        history = ShellHistory()
+        assert history.has_atuin is False
+
+
+def test_atuin_history_success():
+    """Test adding command to Atuin history successfully."""
+    with patch("shutil.which") as mock_which, \
+         patch("subprocess.run") as mock_run:
+        # Atuin is available
+        mock_which.return_value = "/usr/bin/atuin"
+
+        # Mock successful atuin history start (returns ID)
+        start_result = MagicMock()
+        start_result.returncode = 0
+        start_result.stdout = "test-history-id-123\n"
+
+        # Mock successful atuin history end
+        end_result = MagicMock()
+        end_result.returncode = 0
+
+        mock_run.side_effect = [start_result, end_result]
+
+        history = ShellHistory()
+        result = history.add_to_history("echo 'test'")
+
+        assert result is True
+        assert mock_run.call_count == 2
+
+        # Verify the commands were called correctly
+        first_call = mock_run.call_args_list[0]
+        assert first_call[0][0] == ["atuin", "history", "start", "--", "echo 'test'"]
+
+        second_call = mock_run.call_args_list[1]
+        assert second_call[0][0] == ["atuin", "history", "end", "--exit", "0", "test-history-id-123"]
+
+
+def test_atuin_history_failure_fallback():
+    """Test fallback to traditional history when Atuin fails."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        histfile = Path(tmpdir) / "test_history"
+
+        with patch("shutil.which") as mock_which, \
+             patch("subprocess.run") as mock_run:
+            # Atuin is available but fails
+            mock_which.return_value = "/usr/bin/atuin"
+
+            # Mock failed atuin history start
+            start_result = MagicMock()
+            start_result.returncode = 1
+            mock_run.return_value = start_result
+
+            history = ShellHistory()
+            history.shell = "zsh"
+            history.histfile = histfile
+
+            # Should fall back to zsh history
+            result = history.add_to_history("ls -la")
+            assert result is True
+
+            # Verify fallback to file-based history worked
+            assert histfile.exists()
+            content = histfile.read_text()
+            assert "ls -la" in content
 
 
 # Tests are now run via pytest - no manual runner needed

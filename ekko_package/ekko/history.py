@@ -3,6 +3,8 @@ Shell history management for different shell environments.
 """
 
 import os
+import shutil
+import subprocess
 import time
 from pathlib import Path
 from typing import Optional
@@ -15,6 +17,7 @@ class ShellHistory:
         """Initialize shell history manager."""
         self.shell = self._detect_shell()
         self.histfile = self._get_histfile()
+        self.has_atuin = self._detect_atuin()
 
     def _detect_shell(self) -> str:
         """
@@ -59,9 +62,61 @@ class ShellHistory:
 
         return None
 
+    def _detect_atuin(self) -> bool:
+        """
+        Detect if Atuin is available.
+
+        Returns:
+            True if Atuin is installed and in PATH
+        """
+        return shutil.which("atuin") is not None
+
+    def _add_atuin_history(self, command: str) -> bool:
+        """
+        Add command to Atuin history.
+
+        Uses 'atuin history start' and 'atuin history end' to programmatically
+        add a command to Atuin's SQLite database.
+
+        Args:
+            command: Command to add
+
+        Returns:
+            True if successful
+        """
+        try:
+            # Start a history entry and get its ID
+            result = subprocess.run(
+                ["atuin", "history", "start", "--", command],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+
+            if result.returncode != 0:
+                return False
+
+            history_id = result.stdout.strip()
+
+            # End the history entry with exit code 0
+            result = subprocess.run(
+                ["atuin", "history", "end", "--exit", "0", history_id],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+
+            return result.returncode == 0
+        except (subprocess.TimeoutExpired, subprocess.SubprocessError, FileNotFoundError):
+            # Silently fail - shell history is not critical
+            return False
+
     def add_to_history(self, command: str) -> bool:
         """
         Add a command to shell history.
+
+        Tries Atuin first if available, otherwise falls back to traditional
+        shell history files.
 
         Args:
             command: Command to add to history
@@ -73,6 +128,13 @@ class ShellHistory:
             return False
 
         try:
+            # Try Atuin first if available
+            if self.has_atuin:
+                if self._add_atuin_history(command):
+                    return True
+                # If Atuin fails, fall back to traditional methods
+
+            # Traditional shell-specific history
             if self.shell == "bash":
                 return self._add_bash_history(command)
             elif self.shell == "zsh":
