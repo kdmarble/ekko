@@ -73,7 +73,7 @@ WHEEL_URL="${REPO_URL}/releases/download/${LATEST_VERSION}/ekko-${LATEST_VERSION
 
 if pipx list | grep -q "ekko"; then
     echo -e "${YELLOW}⚠${NC}  ekko is already installed, upgrading..."
-    pipx upgrade ekko || pipx install --force "$WHEEL_URL"
+    pipx install --force "$WHEEL_URL"
 else
     pipx install "$WHEEL_URL"
 fi
