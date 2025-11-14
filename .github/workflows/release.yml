@@ -27,20 +27,17 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install build twine requests pexpect typer
+          pip install build twine
 
       - name: Install ekko package for testing
         run: |
-          cd ekko_package
-          pip install -e .
+          pip install -e ekko_package[dev]
 
       - name: Run tests
         run: |
           python3 -m ekko.cli --help
           python3 -m ekko.cli --version
-          python3 tests/test_setup_wizard.py
-          python3 tests/test_provider_switching.py
-          python3 tests/test_upgrade_compatibility.py
+          pytest tests/ -v --tb=short --disable-warnings
 
       - name: Build package distribution
         run: |
