@@ -149,11 +149,38 @@ jobs:
             flag { print }
           ' CHANGELOG.md > release-notes.md
 
-      - name: Create GitHub Release
+          # Check if we got any content
+          if [ -s release-notes.md ]; then
+            echo "has_changelog=true" >> $GITHUB_OUTPUT
+            echo "✅ Found changelog entry for version $VERSION"
+          else
+            echo "has_changelog=false" >> $GITHUB_OUTPUT
+            echo "⚠️  No changelog entry found for version $VERSION"
+            echo "Will use GitHub's automatic release notes generation"
+          fi
+
+      - name: Create GitHub Release (with changelog)
+        if: steps.changelog.outputs.has_changelog == 'true'
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.version.outputs.TAG_NAME }}
           body_path: release-notes.md
+          files: |
+            release/ekko-*.tar.gz
+            release/ekko-*.whl
+            release/checksums.txt
+            release/install-ekko.sh
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release (auto-generated)
+        if: steps.changelog.outputs.has_changelog == 'false'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.TAG_NAME }}
+          generate_release_notes: true
           files: |
             release/ekko-*.tar.gz
             release/ekko-*.whl
