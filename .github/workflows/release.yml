@@ -134,7 +134,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.version.outputs.TAG_NAME }}
-          body_file: release-notes.md
+          body_path: release-notes.md
           files: |
             release/ekko-*.tar.gz
             release/ekko-*.whl
