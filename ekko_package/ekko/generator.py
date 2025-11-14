@@ -3,7 +3,7 @@ Command generation logic for ekko
 """
 
 import re
-import subprocess
+import subprocess  # nosec B404 - subprocess needed for command execution
 import sys
 
 from rich.console import Console
@@ -12,6 +12,16 @@ from ekko.history import log_to_history
 from ekko.providers import get_provider
 
 console = Console()
+
+# Dangerous command patterns that should trigger warnings
+DANGEROUS_PATTERNS = [
+    r"\brm\s+-rf\s+/",  # rm -rf /
+    r"\bdd\s+if=/dev/(?:zero|random)\s+of=/dev/(?:sda|hda)",  # Disk wiping
+    r":\(\)\{.*:\|:.*\};:",  # Fork bomb
+    r"\bchmod\s+-R\s+777\s+/",  # Dangerous chmod
+    r"\bmkfs\.",  # Filesystem formatting
+    r"\b(?:wget|curl).*\|\s*(?:bash|sh)",  # Pipe to shell
+]
 
 
 class CommandGenerator:
@@ -39,26 +49,30 @@ class CommandGenerator:
         """
         provider_type = self.config["provider"]
 
-        if provider_type == "anthropic":
-            api_key = self.config.get("anthropic_api_key")
-            if not api_key:
-                print("Error: Anthropic API key not configured. Run: ekko --setup")
-                import sys
+        try:
+            if provider_type == "anthropic":
+                api_key = self.config.get("anthropic_api_key")
+                if not api_key:
+                    print("Error: Anthropic API key not configured. Run: ekko --setup")
+                    sys.exit(1)
+                # Initialize provider - sensitive data not logged in errors
+                model_name = self.config.get("anthropic_model")
+                return get_provider("anthropic", api_key=api_key, model=model_name)
 
+            elif provider_type == "ollama":
+                url = self.config.get("ollama_url")
+                model_name = self.config.get("ollama_model")
+                return get_provider("ollama", url=url, model=model_name)
+
+            else:
+                print("Error: Unknown provider configured")
+                print("Run: ekko --setup to reconfigure")
                 sys.exit(1)
-            return get_provider("anthropic", api_key=api_key, model=self.config["anthropic_model"])
 
-        elif provider_type == "ollama":
-            return get_provider(
-                "ollama",
-                url=self.config["ollama_url"],
-                model=self.config["ollama_model"],
-            )
-
-        else:
-            print(f"Error: Unknown provider '{provider_type}'")
-            import sys
-
+        except Exception as e:
+            # Catch and sanitize any errors to prevent logging sensitive data
+            print(f"Error initializing provider: {type(e).__name__}")
+            print("Run: ekko --setup to reconfigure")
             sys.exit(1)
 
     def _get_original_command(self) -> str:
@@ -79,8 +93,10 @@ class CommandGenerator:
                 if len(argv) > 1:
                     cmd_parts.extend(argv[1:])
                 return " ".join(cmd_parts)
-        except Exception:
-            pass
+        except (IndexError, AttributeError, TypeError):
+            # Fallback if argv is not accessible or malformed
+            # This is not critical - just return default
+            return "ekko"
         return "ekko"
 
     def clean_command(self, cmd: str) -> str:
@@ -102,6 +118,31 @@ class CommandGenerator:
         lines = [line.strip() for line in cmd.split("\n") if line.strip()]
         return lines[0] if lines else ""
 
+    def validate_command(self, cmd: str) -> tuple[bool, str]:
+        """
+        Validate command for obvious security issues.
+
+        Args:
+            cmd: Command to validate
+
+        Returns:
+            Tuple of (is_valid, warning_message)
+        """
+        # Check for empty command
+        if not cmd or not cmd.strip():
+            return False, "Empty command"
+
+        # Check for extremely dangerous patterns
+        for pattern in DANGEROUS_PATTERNS:
+            if re.search(pattern, cmd, re.IGNORECASE):
+                return False, "Potentially dangerous command detected. Please review carefully."
+
+        # Check command length (extremely long commands might be suspicious)
+        if len(cmd) > 10000:
+            return False, "Command is suspiciously long"
+
+        return True, ""
+
     def run(self, original_prompt: str):
         """
         Main interactive loop for command generation and execution.
@@ -119,6 +160,13 @@ class CommandGenerator:
 
             if not cmd:
                 print("Error: Could not generate valid command")
+                return
+
+            # Validate command for security issues
+            is_valid, warning = self.validate_command(cmd)
+            if not is_valid:
+                console.print(f"[red]⚠ {warning}[/red]")
+                console.print("[yellow]Command generation cancelled for safety.[/yellow]")
                 return
 
             # Display command
@@ -141,9 +189,10 @@ class CommandGenerator:
                 log_to_history(original_cmd)  # Log the ekko command
                 log_to_history(cmd)  # Log the generated command
 
-                # Run command
+                # Run command with shell=True (required for shell features like pipes, redirects)
+                # nosec B602 - shell=True is intentional as this tool executes user-approved shell commands
                 try:
-                    subprocess.run(cmd, shell=True)
+                    subprocess.run(cmd, shell=True, check=False)  # nosec B602
                 except KeyboardInterrupt:
                     console.print()
                 return
