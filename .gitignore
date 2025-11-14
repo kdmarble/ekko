@@ -135,7 +135,6 @@ test_output/
 *.tar.gz
 *.zip
 ekko_package/ekko/_version.py
-ekko/_version.py
 
 # User configuration (don't commit test configs)
 config.json
