@@ -4,8 +4,10 @@ Command generation logic for ekko
 
 import re
 import subprocess
+import sys
 from rich.console import Console
 from ekko.providers import get_provider
+from ekko.history import log_to_history
 
 console = Console()
 
@@ -58,6 +60,28 @@ class CommandGenerator:
             import sys
 
             sys.exit(1)
+
+    def _get_original_command(self) -> str:
+        """
+        Get the original ekko command from sys.argv.
+
+        Returns:
+            Original ekko command string
+        """
+        try:
+            # Reconstruct the original command
+            # sys.argv[0] is the script name, rest are arguments
+            argv = sys.argv
+            if argv:
+                # Get base command (ekko)
+                cmd_parts = ["ekko"]
+                # Add all arguments after the command
+                if len(argv) > 1:
+                    cmd_parts.extend(argv[1:])
+                return " ".join(cmd_parts)
+        except Exception:
+            pass
+        return "ekko"
 
     def clean_command(self, cmd: str) -> str:
         """
@@ -112,6 +136,11 @@ class CommandGenerator:
 
             # Handle response
             if not user_input or user_input.lower() in ["y", "yes"]:
+                # Log to shell history
+                original_cmd = self._get_original_command()
+                log_to_history(original_cmd)  # Log the ekko command
+                log_to_history(cmd)  # Log the generated command
+
                 # Run command
                 try:
                     subprocess.run(cmd, shell=True)
