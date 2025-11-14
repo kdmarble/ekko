@@ -204,18 +204,21 @@ class Config:
                     print("⚠ Invalid API key format. Please enter a valid Anthropic API key.")
 
             # Get model name (with validation)
-            model = self._get_input(f"Model [{self.config['anthropic_model']}]: ")
+            default_model = self.config['anthropic_model']
+            model = self._get_input(f"Model [{default_model}]: ")
             if model:
                 if self._validate_model_name(model):
                     self.config["anthropic_model"] = model
                 else:
-                    print(f"⚠ Invalid model name, using default: {self.config['anthropic_model']}")
+                    # Use local variable to avoid logging from sensitive config dict
+                    print(f"⚠ Invalid model name, using default: {default_model}")
         else:
             self.config["provider"] = "ollama"
 
             # Get and validate Ollama URL
+            default_url = self.config['ollama_url']
             while True:
-                url = self._get_input(f"Ollama URL [{self.config['ollama_url']}]: ")
+                url = self._get_input(f"Ollama URL [{default_url}]: ")
                 if not url:
                     # User pressed enter, use default
                     break
@@ -228,12 +231,14 @@ class Config:
                     )
 
             # Get and validate model name
-            model = self._get_input(f"Model [{self.config['ollama_model']}]: ")
+            default_model = self.config['ollama_model']
+            model = self._get_input(f"Model [{default_model}]: ")
             if model:
                 if self._validate_model_name(model):
                     self.config["ollama_model"] = model
                 else:
-                    print(f"⚠ Invalid model name, using default: {self.config['ollama_model']}")
+                    # Use local variable to avoid logging from sensitive config dict
+                    print(f"⚠ Invalid model name, using default: {default_model}")
 
         self.save_config()
         print(f"\n✓ Configuration saved to {self.config_file}")
