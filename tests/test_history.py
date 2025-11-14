@@ -88,21 +88,4 @@ def test_empty_command():
     assert result is False
 
 
-if __name__ == "__main__":
-    # Run basic tests
-    test_shell_detection()
-    print("✓ Shell detection test passed")
-
-    test_bash_history()
-    print("✓ Bash history test passed")
-
-    test_zsh_history()
-    print("✓ Zsh history test passed")
-
-    test_fish_history()
-    print("✓ Fish history test passed")
-
-    test_empty_command()
-    print("✓ Empty command test passed")
-
-    print("\nAll tests passed!")
+# Tests are now run via pytest - no manual runner needed

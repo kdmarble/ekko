@@ -1,353 +1,148 @@
-#!/usr/bin/env python3
 """
-Tests for ekko provider and model switching functionality
-Tests --switch, --model, --use, and --config commands
+Tests for ekko provider and model switching functionality.
+Tests --switch, --model, --use, and --config commands.
 """
 
-import os
-import sys
-import json
-import tempfile
-import shutil
-import subprocess
-from pathlib import Path
-
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+import pytest
 
 
 class TestProviderSwitching:
     """Test suite for provider switching functionality"""
 
-    def __init__(self):
-        self.test_dir = None
-        self.passed = 0
-        self.failed = 0
-        self.ekko_package = Path(__file__).parent.parent / "ekko_package"
+    def test_config_display(self, preconfigured_env, ekko_runner):
+        """Test --config command displays configuration"""
+        result = ekko_runner(['--config'])
 
-    def setup_test_env(self):
-        """Create a temporary test environment with pre-configured ekko"""
-        self.test_dir = tempfile.mkdtemp(prefix="ekko_test_")
+        assert result.returncode == 0, "Should exit successfully"
+        assert "ekko Configuration" in result.stdout, "Should show config header"
+        assert "ollama" in result.stdout, "Should show ollama provider"
+        assert "Active" in result.stdout, "Should show active status"
+        assert "qwen3-coder" in result.stdout, "Should show current model"
+        assert "anthropic" in result.stdout, "Should show anthropic provider"
+        assert "sk-ant-..." in result.stdout, "Should mask API key"
 
-        # Create config directory
-        config_dir = Path(self.test_dir) / ".config" / "ekko"
-        config_dir.mkdir(parents=True, exist_ok=True)
+    def test_switch_provider(self, preconfigured_env, ekko_runner, read_config):
+        """Test --switch command changes provider"""
+        # Switch to Anthropic
+        result = ekko_runner(['--switch', 'anthropic'])
 
-        # Create a valid config with both providers configured
-        config_file = config_dir / "config.json"
+        assert result.returncode == 0, "Should exit successfully"
+        assert "Switched to anthropic" in result.stdout, "Should confirm switch"
+
+        # Verify config was updated
+        config = read_config()
+        assert config['provider'] == 'anthropic', "Provider should be anthropic"
+        assert config['ollama_model'] == 'qwen3-coder', "Ollama settings should persist"
+
+    def test_switch_invalid_provider(self, preconfigured_env, ekko_runner, read_config):
+        """Test --switch rejects invalid provider"""
+        result = ekko_runner(['--switch', 'openai'])
+
+        assert result.returncode != 0, "Should exit with error"
+        output = result.stdout + result.stderr
+        assert "Invalid provider" in output, "Should show error message"
+        assert "Valid providers:" in output, "Should show valid options"
+
+        # Verify config was not changed
+        config = read_config()
+        assert config['provider'] == 'ollama', "Provider should remain ollama"
+
+    def test_switch_unconfigured_provider(self, write_config, ekko_runner):
+        """Test --switch rejects unconfigured provider"""
+        # Create config with only Ollama configured
         config = {
             "provider": "ollama",
-            "anthropic_api_key": "sk-ant-test1234567890abcdefghij",
+            "anthropic_api_key": "",  # Empty = unconfigured
             "anthropic_model": "claude-sonnet-4-5-20250929",
             "ollama_url": "http://localhost:11434",
             "ollama_model": "qwen3-coder",
-            "system_prompt": "You are a shell expert. Output ONLY the command."
+            "system_prompt": "You are a shell expert."
         }
+        write_config(config)
 
-        with open(config_file, 'w') as f:
-            json.dump(config, f, indent=2)
+        # Try to switch to unconfigured Anthropic
+        result = ekko_runner(['--switch', 'anthropic'])
 
-        print(f"📁 Test directory: {self.test_dir}")
-        return config_dir
+        assert result.returncode != 0, "Should exit with error"
+        output = result.stdout + result.stderr
+        assert "not configured" in output, "Should show not configured error"
+        assert "ekko --setup" in output, "Should suggest running setup"
 
-    def cleanup_test_env(self):
-        """Clean up test environment"""
-        if self.test_dir and Path(self.test_dir).exists():
-            shutil.rmtree(self.test_dir)
-            print(f"🧹 Cleaned up test directory")
-
-    def run_test(self, name, test_func):
-        """Run a single test and track results"""
-        print(f"\n🧪 Testing: {name}")
-        try:
-            test_func()
-            print(f"   ✅ PASSED")
-            self.passed += 1
-            return True
-        except AssertionError as e:
-            print(f"   ❌ FAILED: {e}")
-            self.failed += 1
-            return False
-        except Exception as e:
-            print(f"   ❌ ERROR: {e}")
-            self.failed += 1
-            return False
-
-    def run_ekko(self, args, env=None):
-        """Helper to run ekko command and return output"""
-        if env is None:
-            env = os.environ.copy()
-            env['HOME'] = self.test_dir
-            # Add package to Python path
-            env['PYTHONPATH'] = str(self.ekko_package)
-
-        result = subprocess.run(
-            ['python3', '-m', 'ekko.cli'] + args,
-            env=env,
-            capture_output=True,
-            text=True
-        )
-        return result
-
-    def get_config(self):
-        """Helper to read current config"""
-        config_file = Path(self.test_dir) / ".config" / "ekko" / "config.json"
-        with open(config_file, 'r') as f:
-            return json.load(f)
-
-    def test_config_display(self):
-        """Test --config command displays configuration"""
-        self.setup_test_env()
-
-        try:
-            result = self.run_ekko(['--config'])
-
-            assert result.returncode == 0, "Should exit successfully"
-            assert "ekko Configuration" in result.stdout, "Should show config header"
-            assert "ollama" in result.stdout, "Should show ollama provider"
-            assert "Active" in result.stdout, "Should show active status"
-            assert "qwen3-coder" in result.stdout, "Should show current model"
-            assert "anthropic" in result.stdout, "Should show anthropic provider"
-            assert "sk-ant-..." in result.stdout, "Should mask API key"
-
-        finally:
-            self.cleanup_test_env()
-
-    def test_switch_provider(self):
-        """Test --switch command changes provider"""
-        self.setup_test_env()
-
-        try:
-            # Switch to Anthropic
-            result = self.run_ekko(['--switch', 'anthropic'])
-
-            assert result.returncode == 0, "Should exit successfully"
-            assert "Switched to anthropic" in result.stdout, "Should confirm switch"
-
-            # Verify config was updated
-            config = self.get_config()
-            assert config['provider'] == 'anthropic', "Provider should be anthropic"
-            assert config['ollama_model'] == 'qwen3-coder', "Ollama settings should persist"
-
-        finally:
-            self.cleanup_test_env()
-
-    def test_switch_invalid_provider(self):
-        """Test --switch rejects invalid provider"""
-        self.setup_test_env()
-
-        try:
-            result = self.run_ekko(['--switch', 'openai'])
-
-            assert result.returncode != 0, "Should exit with error"
-            output = result.stdout + result.stderr
-            assert "Invalid provider" in output, "Should show error message"
-            assert "Valid providers:" in output, "Should show valid options"
-
-            # Verify config was not changed
-            config = self.get_config()
-            assert config['provider'] == 'ollama', "Provider should remain ollama"
-
-        finally:
-            self.cleanup_test_env()
-
-    def test_switch_unconfigured_provider(self):
-        """Test --switch rejects unconfigured provider"""
-        config_dir = self.setup_test_env()
-
-        try:
-            # Remove Anthropic API key to make it unconfigured
-            config_file = config_dir / "config.json"
-            config = self.get_config()
-            config['anthropic_api_key'] = ""
-            with open(config_file, 'w') as f:
-                json.dump(config, f)
-
-            # Try to switch to unconfigured Anthropic
-            result = self.run_ekko(['--switch', 'anthropic'])
-
-            assert result.returncode != 0, "Should exit with error"
-            output = result.stdout + result.stderr
-            assert "not configured" in output, "Should show not configured error"
-            assert "ekko --setup" in output, "Should suggest running setup"
-
-        finally:
-            self.cleanup_test_env()
-
-    def test_switch_model(self):
+    def test_switch_model(self, preconfigured_env, ekko_runner, read_config):
         """Test --model command changes model for current provider"""
-        self.setup_test_env()
+        # Change Ollama model
+        result = ekko_runner(['--model', 'llama3'])
 
-        try:
-            # Change Ollama model
-            result = self.run_ekko(['--model', 'llama3'])
+        assert result.returncode == 0, "Should exit successfully"
+        assert "Changed ollama model to llama3" in result.stdout, "Should confirm change"
 
-            assert result.returncode == 0, "Should exit successfully"
-            assert "Changed ollama model to llama3" in result.stdout, "Should confirm change"
+        # Verify config was updated
+        config = read_config()
+        assert config['ollama_model'] == 'llama3', "Model should be updated"
+        assert config['provider'] == 'ollama', "Provider should remain same"
 
-            # Verify config was updated
-            config = self.get_config()
-            assert config['ollama_model'] == 'llama3', "Model should be updated"
-            assert config['provider'] == 'ollama', "Provider should remain same"
-
-        finally:
-            self.cleanup_test_env()
-
-    def test_switch_model_invalid(self):
+    def test_switch_model_invalid(self, preconfigured_env, ekko_runner):
         """Test --model rejects suspicious model names"""
-        self.setup_test_env()
+        # Try to use suspicious model name
+        result = ekko_runner(['--model', 'echo "malicious"'])
 
-        try:
-            # Try to use suspicious model name
-            result = self.run_ekko(['--model', 'echo "malicious"'])
+        assert result.returncode != 0, "Should exit with error"
+        output = result.stdout + result.stderr
+        assert "Invalid model name" in output, "Should show validation error"
 
-            assert result.returncode != 0, "Should exit with error"
-            output = result.stdout + result.stderr
-            assert "Invalid model name" in output, "Should show validation error"
-
-        finally:
-            self.cleanup_test_env()
-
-    def test_use_command_with_both(self):
+    def test_use_command_with_both(self, preconfigured_env, ekko_runner, read_config):
         """Test --use command with provider:model"""
-        self.setup_test_env()
+        # Use combo command
+        result = ekko_runner(['--use', 'anthropic:claude-opus-4'])
 
-        try:
-            # Use combo command
-            result = self.run_ekko(['--use', 'anthropic:claude-opus-4'])
+        assert result.returncode == 0, "Should exit successfully"
+        assert "Switched to anthropic" in result.stdout, "Should show provider switch"
+        assert "Changed anthropic model" in result.stdout, "Should show model change"
 
-            assert result.returncode == 0, "Should exit successfully"
-            assert "Switched to anthropic" in result.stdout, "Should show provider switch"
-            assert "Changed anthropic model" in result.stdout, "Should show model change"
+        # Verify config was updated
+        config = read_config()
+        assert config['provider'] == 'anthropic', "Provider should be anthropic"
+        assert config['anthropic_model'] == 'claude-opus-4', "Model should be updated"
 
-            # Verify config was updated
-            config = self.get_config()
-            assert config['provider'] == 'anthropic', "Provider should be anthropic"
-            assert config['anthropic_model'] == 'claude-opus-4', "Model should be updated"
-
-        finally:
-            self.cleanup_test_env()
-
-    def test_use_command_provider_only(self):
+    def test_use_command_provider_only(self, preconfigured_env, ekko_runner, read_config):
         """Test --use command with just provider name"""
-        self.setup_test_env()
+        # Use command with just provider
+        result = ekko_runner(['--use', 'anthropic'])
 
-        try:
-            # Use command with just provider
-            result = self.run_ekko(['--use', 'anthropic'])
+        assert result.returncode == 0, "Should exit successfully"
+        assert "Switched to anthropic" in result.stdout, "Should show provider switch"
 
-            assert result.returncode == 0, "Should exit successfully"
-            assert "Switched to anthropic" in result.stdout, "Should show provider switch"
+        # Verify config was updated
+        config = read_config()
+        assert config['provider'] == 'anthropic', "Provider should be anthropic"
+        assert config['anthropic_model'] == 'claude-sonnet-4-5-20250929', "Model should remain default"
 
-            # Verify config was updated
-            config = self.get_config()
-            assert config['provider'] == 'anthropic', "Provider should be anthropic"
-            assert config['anthropic_model'] == 'claude-sonnet-4-5-20250929', "Model should remain default"
-
-        finally:
-            self.cleanup_test_env()
-
-    def test_settings_persistence(self):
+    def test_settings_persistence(self, preconfigured_env, ekko_runner, read_config):
         """Test that settings persist when switching between providers"""
-        self.setup_test_env()
+        # Change Ollama model
+        ekko_runner(['--model', 'llama3'])
 
-        try:
-            # Change Ollama model
-            self.run_ekko(['--model', 'llama3'])
+        # Switch to Anthropic and change its model
+        ekko_runner(['--switch', 'anthropic'])
+        ekko_runner(['--model', 'claude-opus-4'])
 
-            # Switch to Anthropic and change its model
-            self.run_ekko(['--switch', 'anthropic'])
-            self.run_ekko(['--model', 'claude-opus-4'])
+        # Switch back to Ollama
+        result = ekko_runner(['--switch', 'ollama'])
 
-            # Switch back to Ollama
-            result = self.run_ekko(['--switch', 'ollama'])
+        # Verify Ollama still has llama3
+        assert "llama3" in result.stdout, "Should show llama3 model"
 
-            # Verify Ollama still has llama3
-            assert "llama3" in result.stdout, "Should show llama3 model"
+        config = read_config()
+        assert config['ollama_model'] == 'llama3', "Ollama model should persist"
+        assert config['anthropic_model'] == 'claude-opus-4', "Anthropic model should persist"
 
-            config = self.get_config()
-            assert config['ollama_model'] == 'llama3', "Ollama model should persist"
-            assert config['anthropic_model'] == 'claude-opus-4', "Anthropic model should persist"
-
-        finally:
-            self.cleanup_test_env()
-
-    def test_help_shows_new_commands(self):
+    def test_help_shows_new_commands(self, preconfigured_env, ekko_runner):
         """Test that --help shows new switching commands"""
-        self.setup_test_env()
+        result = ekko_runner(['--help'])
 
-        try:
-            result = self.run_ekko(['--help'])
-
-            assert result.returncode == 0, "Should exit successfully"
-            assert "--config" in result.stdout, "Should document --config"
-            assert "--switch" in result.stdout, "Should document --switch"
-            assert "--model" in result.stdout, "Should document --model"
-            assert "--use" in result.stdout, "Should document --use"
-            assert "Provider Management:" in result.stdout, "Should have examples section"
-
-        finally:
-            self.cleanup_test_env()
-
-    def print_summary(self):
-        """Print test summary"""
-        total = self.passed + self.failed
-        print(f"\n{'='*60}")
-        print(f"TEST SUMMARY")
-        print(f"{'='*60}")
-        print(f"Total tests: {total}")
-        print(f"✅ Passed: {self.passed}")
-        print(f"❌ Failed: {self.failed}")
-        print(f"Success rate: {(self.passed/total*100):.1f}%")
-        print(f"{'='*60}\n")
-
-        return self.failed == 0
-
-
-def main():
-    """Run all tests"""
-    print("="*60)
-    print("EKKO PROVIDER SWITCHING TEST SUITE")
-    print("="*60)
-
-    tester = TestProviderSwitching()
-
-    # Run all tests
-    tester.run_test("Display configuration with --config",
-                   tester.test_config_display)
-
-    tester.run_test("Switch provider with --switch",
-                   tester.test_switch_provider)
-
-    tester.run_test("Reject invalid provider",
-                   tester.test_switch_invalid_provider)
-
-    tester.run_test("Reject unconfigured provider",
-                   tester.test_switch_unconfigured_provider)
-
-    tester.run_test("Change model with --model",
-                   tester.test_switch_model)
-
-    tester.run_test("Reject invalid model name",
-                   tester.test_switch_model_invalid)
-
-    tester.run_test("Use command with provider:model",
-                   tester.test_use_command_with_both)
-
-    tester.run_test("Use command with provider only",
-                   tester.test_use_command_provider_only)
-
-    tester.run_test("Settings persist across switches",
-                   tester.test_settings_persistence)
-
-    tester.run_test("Help shows new commands",
-                   tester.test_help_shows_new_commands)
-
-    # Print summary
-    success = tester.print_summary()
-
-    return 0 if success else 1
-
-
-if __name__ == "__main__":
-    sys.exit(main())
+        assert result.returncode == 0, "Should exit successfully"
+        assert "--config" in result.stdout, "Should document --config"
+        assert "--switch" in result.stdout, "Should document --switch"
+        assert "--model" in result.stdout, "Should document --model"
+        assert "--use" in result.stdout, "Should document --use"
+        assert "Provider Management:" in result.stdout, "Should have examples section"
