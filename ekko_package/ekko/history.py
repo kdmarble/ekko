@@ -47,13 +47,15 @@ class ShellHistory:
         # Escape single quotes by replacing ' with '\''
         return command.replace("'", "'\\''")
 
-    def _add_via_shell_builtin(self, command: str) -> bool:
+    def _add_via_interactive_shell(self, command: str) -> bool:
         """
-        Add command to history using shell's native built-in commands.
+        Add command to history using shell's built-in commands in interactive mode.
 
-        This is the most generic approach that works with any history manager
-        (Atuin, McFly, Hishtory, etc.) that hooks into the shell's history
-        mechanism.
+        This is a generic approach that works with any history manager (Atuin, McFly,
+        Hishtory, etc.) by running the shell in interactive mode (-i flag), which:
+        1. Sources the user's shell config (.zshrc, .bashrc, .config/fish/config.fish)
+        2. Initializes any history managers that hook into the shell
+        3. Makes built-in history commands work through those managers
 
         Args:
             command: Command to add
@@ -68,36 +70,38 @@ class ShellHistory:
 
         try:
             if self.shell == "zsh":
-                # Use print -s to add to zsh history stack
-                # This triggers any hooks that history managers might use
+                # Use print -s in interactive mode to trigger history hooks
                 shell_cmd = f"print -s '{escaped_cmd}'"
                 result = subprocess.run(
-                    [self.shell_path, "-c", shell_cmd],
+                    [self.shell_path, "-i", "-c", shell_cmd],
                     capture_output=True,
                     timeout=5,
                     env=os.environ.copy(),
+                    stdin=subprocess.DEVNULL,  # Prevent waiting for input
                 )
                 return result.returncode == 0
 
             elif self.shell == "bash":
-                # Use history -s to add to bash history
+                # Use history -s in interactive mode to trigger history hooks
                 shell_cmd = f"history -s '{escaped_cmd}'"
                 result = subprocess.run(
-                    [self.shell_path, "-c", shell_cmd],
+                    [self.shell_path, "-i", "-c", shell_cmd],
                     capture_output=True,
                     timeout=5,
                     env=os.environ.copy(),
+                    stdin=subprocess.DEVNULL,  # Prevent waiting for input
                 )
                 return result.returncode == 0
 
             elif self.shell == "fish":
-                # Use fish's built-in history command
+                # Use history --save in interactive mode to trigger history hooks
                 shell_cmd = f"history --save '{escaped_cmd}'"
                 result = subprocess.run(
-                    [self.shell_path, "-c", shell_cmd],
+                    [self.shell_path, "-i", "-c", shell_cmd],
                     capture_output=True,
                     timeout=5,
                     env=os.environ.copy(),
+                    stdin=subprocess.DEVNULL,  # Prevent waiting for input
                 )
                 return result.returncode == 0
 
@@ -111,9 +115,9 @@ class ShellHistory:
         """
         Add a command to shell history.
 
-        Uses the shell's native history commands, which works generically with
-        any shell history manager (Atuin, McFly, Hishtory, etc.) that hooks
-        into the shell's built-in history mechanism.
+        Uses shell built-in commands in interactive mode, which works generically
+        with any shell history manager (Atuin, McFly, Hishtory, etc.) by sourcing
+        the user's shell config and initializing their history tools.
 
         Args:
             command: Command to add to history
@@ -125,7 +129,7 @@ class ShellHistory:
             return False
 
         try:
-            return self._add_via_shell_builtin(command)
+            return self._add_via_interactive_shell(command)
         except Exception:
             # Silently fail - shell history is not critical
             return False
