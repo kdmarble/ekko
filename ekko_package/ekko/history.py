@@ -3,9 +3,7 @@ Shell history management for different shell environments.
 """
 
 import os
-import time
-from pathlib import Path
-from typing import Optional
+import subprocess
 
 
 class ShellHistory:
@@ -14,7 +12,7 @@ class ShellHistory:
     def __init__(self):
         """Initialize shell history manager."""
         self.shell = self._detect_shell()
-        self.histfile = self._get_histfile()
+        self.shell_path = os.environ.get("SHELL", "")
 
     def _detect_shell(self) -> str:
         """
@@ -36,32 +34,86 @@ class ShellHistory:
         else:
             return "unknown"
 
-    def _get_histfile(self) -> Optional[Path]:
+    def _escape_command(self, command: str) -> str:
         """
-        Get the history file path for the current shell.
+        Escape a command string for safe shell execution.
+
+        Args:
+            command: Command to escape
 
         Returns:
-            Path to history file, or None if not found
+            Escaped command string
         """
-        # Check HISTFILE environment variable first
-        histfile_env = os.environ.get("HISTFILE")
-        if histfile_env:
-            return Path(histfile_env).expanduser()
+        # Escape single quotes by replacing ' with '\''
+        return command.replace("'", "'\\''")
 
-        # Shell-specific defaults
-        home = Path.home()
-        if self.shell == "bash":
-            return home / ".bash_history"
-        elif self.shell == "zsh":
-            return home / ".zsh_history"
-        elif self.shell == "fish":
-            return home / ".local" / "share" / "fish" / "fish_history"
+    def _add_via_shell_builtin(self, command: str) -> bool:
+        """
+        Add command to history using shell's native built-in commands.
 
-        return None
+        This is the most generic approach that works with any history manager
+        (Atuin, McFly, Hishtory, etc.) that hooks into the shell's history
+        mechanism.
+
+        Args:
+            command: Command to add
+
+        Returns:
+            True if successful
+        """
+        if not self.shell_path:
+            return False
+
+        escaped_cmd = self._escape_command(command)
+
+        try:
+            if self.shell == "zsh":
+                # Use print -s to add to zsh history stack
+                # This triggers any hooks that history managers might use
+                shell_cmd = f"print -s '{escaped_cmd}'"
+                result = subprocess.run(
+                    [self.shell_path, "-c", shell_cmd],
+                    capture_output=True,
+                    timeout=5,
+                    env=os.environ.copy(),
+                )
+                return result.returncode == 0
+
+            elif self.shell == "bash":
+                # Use history -s to add to bash history
+                shell_cmd = f"history -s '{escaped_cmd}'"
+                result = subprocess.run(
+                    [self.shell_path, "-c", shell_cmd],
+                    capture_output=True,
+                    timeout=5,
+                    env=os.environ.copy(),
+                )
+                return result.returncode == 0
+
+            elif self.shell == "fish":
+                # Use fish's built-in history command
+                shell_cmd = f"history --save '{escaped_cmd}'"
+                result = subprocess.run(
+                    [self.shell_path, "-c", shell_cmd],
+                    capture_output=True,
+                    timeout=5,
+                    env=os.environ.copy(),
+                )
+                return result.returncode == 0
+
+            return False
+
+        except (subprocess.TimeoutExpired, subprocess.SubprocessError, FileNotFoundError):
+            # Silently fail - shell history is not critical
+            return False
 
     def add_to_history(self, command: str) -> bool:
         """
         Add a command to shell history.
+
+        Uses the shell's native history commands, which works generically with
+        any shell history manager (Atuin, McFly, Hishtory, etc.) that hooks
+        into the shell's built-in history mechanism.
 
         Args:
             command: Command to add to history
@@ -73,137 +125,8 @@ class ShellHistory:
             return False
 
         try:
-            if self.shell == "bash":
-                return self._add_bash_history(command)
-            elif self.shell == "zsh":
-                return self._add_zsh_history(command)
-            elif self.shell == "fish":
-                return self._add_fish_history(command)
-            else:
-                # Fallback: try generic approach
-                return self._add_generic_history(command)
+            return self._add_via_shell_builtin(command)
         except Exception:
-            # Silently fail - shell history is not critical
-            return False
-
-    def _add_bash_history(self, command: str) -> bool:
-        """
-        Add command to bash history.
-
-        Uses HISTFILE append for compatibility with subprocess execution.
-
-        Args:
-            command: Command to add
-
-        Returns:
-            True if successful
-        """
-        if not self.histfile:
-            return False
-
-        try:
-            # Ensure directory exists
-            self.histfile.parent.mkdir(parents=True, exist_ok=True)
-
-            # Append to history file
-            with open(self.histfile, "a") as f:
-                f.write(f"{command}\n")
-
-            # Ensure history file has secure permissions
-            self.histfile.chmod(0o600)
-            return True
-        except (OSError, PermissionError):
-            # Silently fail - shell history is not critical
-            return False
-
-    def _add_zsh_history(self, command: str) -> bool:
-        """
-        Add command to zsh history.
-
-        Zsh history format: ': timestamp:duration;command'
-
-        Args:
-            command: Command to add
-
-        Returns:
-            True if successful
-        """
-        if not self.histfile:
-            return False
-
-        try:
-            # Ensure directory exists
-            self.histfile.parent.mkdir(parents=True, exist_ok=True)
-
-            # Zsh extended history format
-            timestamp = int(time.time())
-            with open(self.histfile, "a") as f:
-                f.write(f": {timestamp}:0;{command}\n")
-
-            # Ensure history file has secure permissions
-            self.histfile.chmod(0o600)
-            return True
-        except (OSError, PermissionError):
-            # Silently fail - shell history is not critical
-            return False
-
-    def _add_fish_history(self, command: str) -> bool:
-        """
-        Add command to fish history.
-
-        Fish history format uses YAML-like structure.
-
-        Args:
-            command: Command to add
-
-        Returns:
-            True if successful
-        """
-        if not self.histfile:
-            return False
-
-        try:
-            # Ensure directory exists
-            self.histfile.parent.mkdir(parents=True, exist_ok=True)
-
-            # Fish history format
-            timestamp = int(time.time())
-            with open(self.histfile, "a") as f:
-                f.write(f"- cmd: {command}\n")
-                f.write(f"  when: {timestamp}\n")
-
-            # Ensure history file has secure permissions
-            self.histfile.chmod(0o600)
-            return True
-        except (OSError, PermissionError):
-            # Silently fail - shell history is not critical
-            return False
-
-    def _add_generic_history(self, command: str) -> bool:
-        """
-        Fallback method for unknown shells.
-
-        Args:
-            command: Command to add
-
-        Returns:
-            True if successful
-        """
-        if not self.histfile:
-            return False
-
-        try:
-            # Ensure directory exists
-            self.histfile.parent.mkdir(parents=True, exist_ok=True)
-
-            # Simple append
-            with open(self.histfile, "a") as f:
-                f.write(f"{command}\n")
-
-            # Ensure history file has secure permissions
-            self.histfile.chmod(0o600)
-            return True
-        except (OSError, PermissionError):
             # Silently fail - shell history is not critical
             return False
 
