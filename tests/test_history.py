@@ -38,8 +38,8 @@ def test_command_escaping():
     assert escaped == "ls -la"
 
 
-def test_zsh_history_via_shell_builtin():
-    """Test adding to zsh history using print -s."""
+def test_zsh_history_interactive():
+    """Test adding to zsh history using print -s in interactive mode."""
     with patch("subprocess.run") as mock_run:
         mock_result = MagicMock()
         mock_result.returncode = 0
@@ -52,17 +52,18 @@ def test_zsh_history_via_shell_builtin():
         result = history.add_to_history("ls -la")
         assert result is True
 
-        # Verify subprocess.run was called with the correct arguments
+        # Verify subprocess.run was called with interactive flag
         mock_run.assert_called_once()
         call_args = mock_run.call_args[0][0]
         assert call_args[0] == "/bin/zsh"
-        assert call_args[1] == "-c"
-        assert "print -s" in call_args[2]
-        assert "ls -la" in call_args[2]
+        assert call_args[1] == "-i"  # Interactive mode
+        assert call_args[2] == "-c"
+        assert "print -s" in call_args[3]
+        assert "ls -la" in call_args[3]
 
 
-def test_bash_history_via_shell_builtin():
-    """Test adding to bash history using history -s."""
+def test_bash_history_interactive():
+    """Test adding to bash history using history -s in interactive mode."""
     with patch("subprocess.run") as mock_run:
         mock_result = MagicMock()
         mock_result.returncode = 0
@@ -75,17 +76,18 @@ def test_bash_history_via_shell_builtin():
         result = history.add_to_history("echo 'test'")
         assert result is True
 
-        # Verify subprocess.run was called with the correct arguments
+        # Verify subprocess.run was called with interactive flag
         mock_run.assert_called_once()
         call_args = mock_run.call_args[0][0]
         assert call_args[0] == "/bin/bash"
-        assert call_args[1] == "-c"
-        assert "history -s" in call_args[2]
-        assert "echo" in call_args[2]
+        assert call_args[1] == "-i"  # Interactive mode
+        assert call_args[2] == "-c"
+        assert "history -s" in call_args[3]
+        assert "echo" in call_args[3]
 
 
-def test_fish_history_via_shell_builtin():
-    """Test adding to fish history using history --save."""
+def test_fish_history_interactive():
+    """Test adding to fish history using history --save in interactive mode."""
     with patch("subprocess.run") as mock_run:
         mock_result = MagicMock()
         mock_result.returncode = 0
@@ -98,13 +100,14 @@ def test_fish_history_via_shell_builtin():
         result = history.add_to_history("git status")
         assert result is True
 
-        # Verify subprocess.run was called with the correct arguments
+        # Verify subprocess.run was called with interactive flag
         mock_run.assert_called_once()
         call_args = mock_run.call_args[0][0]
         assert call_args[0] == "/usr/bin/fish"
-        assert call_args[1] == "-c"
-        assert "history --save" in call_args[2]
-        assert "git status" in call_args[2]
+        assert call_args[1] == "-i"  # Interactive mode
+        assert call_args[2] == "-c"
+        assert "history --save" in call_args[3]
+        assert "git status" in call_args[3]
 
 
 def test_shell_command_failure():
